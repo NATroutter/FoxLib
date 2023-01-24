@@ -90,7 +90,7 @@ public class FileManager {
     }
 
     public void reload() {
-        FileContent = readFile(file);
+        FileContent = FileUtils.readFile(file).content();
         if (FileContent != null) {
             data.getInfoLogger().accept(data.getFileName() + " Loaded!");
             initialized = true;
@@ -100,7 +100,7 @@ public class FileManager {
     public String get() { return FileContent; }
 
     public void save(String data) {
-    	writeFile(file, data);
+    	FileUtils.writeFile(file, data);
     }
 
     private boolean exportResource(File file, String resourceName) {
@@ -119,37 +119,6 @@ public class FileManager {
             return true;
         } catch (Exception ex) {
             ex.printStackTrace();
-        }
-        return false;
-    }
-
-    private String readFile(File file) {
-        try (FileReader fr = new FileReader(file); BufferedReader br = new BufferedReader(fr)) {
-            StringBuilder sb = new StringBuilder();
-            String line = br.readLine();
-
-            while (line != null) {
-                sb.append(line).append(System.lineSeparator());
-                line = br.readLine();
-            }
-            return sb.toString();
-        } catch (Exception e) {
-            data.getErrorLogger().accept("Failed to read file!");
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private boolean writeFile(File file, String Content) {
-        try(FileWriter fw = new FileWriter(file);BufferedWriter bw = new BufferedWriter(fw);) {
-            if (!file.exists()) {
-                file.createNewFile();
-            }
-            bw.write(Content);
-            return true;
-        } catch (Exception e) {
-            data.getErrorLogger().accept("Failed to write file!");
-            e.printStackTrace();
         }
         return false;
     }
