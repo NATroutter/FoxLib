@@ -84,15 +84,15 @@ public class NATLogger {
 
     public void info(String msg) {
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][INFO] " + msg);}
-        console("\u001B[32m[INFO] " + msg + "\u001B[0m");
+        console("\u001B[32m["+timeStamp()+"][INFO] " + msg + "\u001B[0m");
     }
     public void error(String msg) {
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][ERROR] " + msg);}
-        console("\u001B[31m[ERROR] " + msg + "\u001B[0m");
+        console("\u001B[31m["+timeStamp()+"][ERROR] " + msg + "\u001B[0m");
     }
     public void warn(String msg) {
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][WARN] " + msg);}
-        console("\u001B[33m[WARN] " + msg + "\u001B[0m");
+        console("\u001B[33m["+timeStamp()+"][WARN] " + msg + "\u001B[0m");
     }
     private void console(String msg) {
         if(args.isConsoleLog()) {System.out.println(msg);}
