@@ -5,7 +5,7 @@ import lombok.Getter;
 public class FoxLib {
 
     @Getter
-    public String Version = "1.0.2";
+    public String Version = "1.0.3";
 
     public static void print(String message) {
         System.out.print(message + "\u001B[0m");
