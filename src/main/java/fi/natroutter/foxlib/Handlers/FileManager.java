@@ -13,12 +13,13 @@ public class FileManager {
         private String fileName;
         private String subFolder = "";
         private boolean exportResource = true;
+        private File directory = null;
         private Consumer<String> errorLogger = message -> {
             System.out.println("FileManager/Error : " + message);
-        };;
+        };
         private Consumer<String> infoLogger = message -> {
             System.out.println("FileManager/Info : " + message);
-        };;
+        };
 
         public Builder(String fileName) {
             this.fileName = fileName;
@@ -26,6 +27,11 @@ public class FileManager {
 
         public Builder setFileName(String fileName) {
             this.fileName = fileName;
+            return this;
+        }
+
+        public Builder setDirectory(File directory) {
+            this.directory = directory;
             return this;
         }
 
@@ -68,7 +74,12 @@ public class FileManager {
     private FileManager(Builder builder) {
         this.data = builder;
 
-        file = new File(System.getProperty("user.dir") + "/" + (data.getSubFolder().length() > 0 ? data.getSubFolder() + "/" : "") + data.getFileName());
+        if (builder.getDirectory() != null) {
+            file = new File(builder.getDirectory(), (data.getSubFolder().length() > 0 && !data.getSubFolder().isBlank() ? data.getSubFolder() + "/" : "") + data.getFileName());
+        } else {
+            file = new File(System.getProperty("user.dir"), (data.getSubFolder().length() > 0 && !data.getSubFolder().isBlank() ? data.getSubFolder() + "/" : "") + data.getFileName());
+        }
+
         fileFolder = new File(file.getParent());
 
         if (!fileFolder.exists()) {
@@ -105,7 +116,7 @@ public class FileManager {
 
     private boolean exportResource(File file, String resourceName) {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        try(InputStream stream = classLoader.getResourceAsStream(resourceName); OutputStream resStreamOut = new FileOutputStream(file);) {
+        try(InputStream stream = classLoader.getResourceAsStream(resourceName); OutputStream resStreamOut = new FileOutputStream(file)) {
             if(stream == null) {
                 data.getErrorLogger().accept("Failed to export resource : " + resourceName);
                 return false;
