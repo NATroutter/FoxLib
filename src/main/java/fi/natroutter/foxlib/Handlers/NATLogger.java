@@ -25,6 +25,12 @@ public class NATLogger {
         private boolean consoleLog = true;
         private boolean debug = false;
         private String timeFormat = "dd.MM.yyyy-HH:mm:ss";
+        private File dataFolder = null;
+
+        public Builder setDataFolder(File dataFolder) {
+            this.dataFolder = new File(dataFolder, "logs");
+            return this;
+        }
 
         public Builder setSaveIntervalSeconds(int saveIntervalSeconds) {
             this.saveIntervalSeconds = saveIntervalSeconds;
@@ -66,7 +72,7 @@ public class NATLogger {
 
     private NATLogger(Builder builder) {
         this.args = builder;
-        logFolder = new File(System.getProperty("user.dir") + "/logs/");
+        logFolder = builder.getDataFolder() != null ? builder.getDataFolder() : new File(System.getProperty("user.dir"), "logs");
         if (!logFolder.exists()) {
             logFolder.mkdirs();
         }
