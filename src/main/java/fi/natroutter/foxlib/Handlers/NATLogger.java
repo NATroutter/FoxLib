@@ -93,6 +93,10 @@ public class NATLogger {
         prune();
     }
 
+    public void log(String msg) {
+        if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][LOG] " + msg);}
+        console("\u001B[36m["+timeStamp()+"] " + msg + "\u001B[0m");
+    }
     public void info(String msg) {
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][INFO] " + msg);}
         console("\u001B[32m["+timeStamp()+"][INFO] " + msg + "\u001B[0m");

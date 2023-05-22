@@ -30,6 +30,6 @@ FoxLib is NATroutter's common purposes java library that provides some useful fe
 <dependency>
     <groupId>fi.natroutter</groupId>
     <artifactId>foxlib</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.6</version>
 </dependency>
 ````
