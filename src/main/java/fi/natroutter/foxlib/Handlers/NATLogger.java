@@ -25,7 +25,9 @@ public class NATLogger {
         private boolean consoleLog = true;
         private boolean debug = false;
         private String timeFormat = "dd.MM.yyyy-HH:mm:ss";
+        private String timeZone = "Europe/Helsinki";
         private File dataFolder = null;
+        private boolean useColors = true;
 
         public Builder setDataFolder(File dataFolder) {
             this.dataFolder = new File(dataFolder, "logs");
@@ -54,6 +56,16 @@ public class NATLogger {
 
         public Builder setDebug(boolean debug) {
             this.debug = debug;
+            return this;
+        }
+
+        public Builder setTimeZone(String timeZone) {
+            this.timeZone = timeZone;
+            return this;
+        }
+
+        public Builder setUseColors(boolean useColors) {
+            this.useColors = useColors;
             return this;
         }
 
@@ -93,21 +105,32 @@ public class NATLogger {
         prune();
     }
 
+
+    private String BLUE = args.isUseColors() ? "\u001B[36m" : "";
+    private String GREEN = args.isUseColors() ? "\u001B[32m" : "";
+    private String RED = args.isUseColors() ? "\u001B[31m" : "";
+    private String YELLOW = args.isUseColors() ? "\u001B[33m" : "";
+
+
     public void log(String msg) {
+        if (args.isUseColors()) { msg = msg.replace("\n", "\n" + BLUE); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][LOG] " + msg);}
-        console("\u001B[36m["+timeStamp()+"] " + msg + "\u001B[0m");
+        console(BLUE + "["+timeStamp()+"] " + msg + "\u001B[0m");
     }
     public void info(String msg) {
+        if (args.isUseColors()) { msg = msg.replace("\n", "\n" + GREEN); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][INFO] " + msg);}
-        console("\u001B[32m["+timeStamp()+"][INFO] " + msg + "\u001B[0m");
+        console(GREEN + "["+timeStamp()+"][INFO] " + msg + "\u001B[0m");
     }
     public void error(String msg) {
+        if (args.isUseColors()) { msg = msg.replace("\n", "\n" + RED); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][ERROR] " + msg);}
-        console("\u001B[31m["+timeStamp()+"][ERROR] " + msg + "\u001B[0m");
+        console(RED + "["+timeStamp()+"][ERROR] " + msg + "\u001B[0m");
     }
     public void warn(String msg) {
+        if (args.isUseColors()) { msg = msg.replace("\n", "\n" + YELLOW); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][WARN] " + msg);}
-        console("\u001B[33m["+timeStamp()+"][WARN] " + msg + "\u001B[0m");
+        console(YELLOW + "["+timeStamp()+"][WARN] " + msg + "\u001B[0m");
     }
     private void console(String msg) {
         if(args.isConsoleLog()) {System.out.println(msg);}
@@ -116,9 +139,9 @@ public class NATLogger {
         if(args.isDebug()) {System.out.println(msg);}
     }
     private String timeStamp() {
-        ZoneId helsinki = ZoneId.of("Europe/Helsinki");
+        ZoneId zone = ZoneId.of(args.getTimeZone());
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(args.getTimeFormat());
-        formatter.withZone(helsinki);
+        formatter.withZone(zone);
         return LocalDateTime.now().format(formatter);
     }
 
