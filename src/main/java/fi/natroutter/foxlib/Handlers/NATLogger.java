@@ -82,8 +82,19 @@ public class NATLogger {
 
     private Builder args;
 
+    private final String BLUE;
+    private final String GREEN;
+    private final String RED;
+    private final String YELLOW;
+
     private NATLogger(Builder builder) {
         this.args = builder;
+
+        BLUE = args.isUseColors() ? "\u001B[36m" : "";
+        GREEN = args.isUseColors() ? "\u001B[32m" : "";
+        RED = args.isUseColors() ? "\u001B[31m" : "";
+        YELLOW = args.isUseColors() ? "\u001B[33m" : "";
+
         logFolder = builder.getDataFolder() != null ? builder.getDataFolder() : new File(System.getProperty("user.dir"), "logs");
         if (!logFolder.exists()) {
             logFolder.mkdirs();
@@ -104,13 +115,6 @@ public class NATLogger {
         save();
         prune();
     }
-
-
-    private String BLUE = args.isUseColors() ? "\u001B[36m" : "";
-    private String GREEN = args.isUseColors() ? "\u001B[32m" : "";
-    private String RED = args.isUseColors() ? "\u001B[31m" : "";
-    private String YELLOW = args.isUseColors() ? "\u001B[33m" : "";
-
 
     public void log(String msg) {
         if (args.isUseColors()) { msg = msg.replace("\n", "\n" + BLUE); }
