@@ -4,18 +4,17 @@ import fi.natroutter.foxlib.data.FileResponse;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.SneakyThrows;
 
 import java.io.File;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Consumer;
 
-public class NATLogger {
+public class FoxLogger {
 
     @Getter @AllArgsConstructor @NoArgsConstructor
     public static class Builder {
@@ -28,9 +27,21 @@ public class NATLogger {
         private String timeZone = "Europe/Helsinki";
         private File dataFolder = null;
         private boolean useColors = true;
+        private boolean isMinecraft = false;
+        private Consumer<String> printter = System.out::println;
 
         public Builder setDataFolder(File dataFolder) {
             this.dataFolder = new File(dataFolder, "logs");
+            return this;
+        }
+
+        public Builder setPrintter(Consumer<String> printter) {
+            this.printter = printter;
+            return this;
+        }
+
+        public Builder setIsMinecraft(boolean isMinecraft) {
+            this.isMinecraft = isMinecraft;
             return this;
         }
 
@@ -74,7 +85,7 @@ public class NATLogger {
             return this;
         }
 
-        public NATLogger build() {return new NATLogger(this);}
+        public FoxLogger build() {return new FoxLogger(this);}
     }
 
     private List<String> entries = new ArrayList<>();
@@ -87,13 +98,13 @@ public class NATLogger {
     private final String RED;
     private final String YELLOW;
 
-    private NATLogger(Builder builder) {
+    private FoxLogger(Builder builder) {
         this.args = builder;
 
-        BLUE = args.isUseColors() ? "\u001B[36m" : "";
-        GREEN = args.isUseColors() ? "\u001B[32m" : "";
-        RED = args.isUseColors() ? "\u001B[31m" : "";
-        YELLOW = args.isUseColors() ? "\u001B[33m" : "";
+        BLUE = args.isUseColors() ? (args.isMinecraft() ? "§9" : "\u001B[36m") : "";
+        GREEN = args.isUseColors() ? (args.isMinecraft() ? "§a" : "\u001B[32m") : "";
+        RED = args.isUseColors() ? (args.isMinecraft() ? "§c" : "\u001B[31m") : "";
+        YELLOW = args.isUseColors() ? (args.isMinecraft() ? "§e" : "\u001B[33m") : "";
 
         logFolder = builder.getDataFolder() != null ? builder.getDataFolder() : new File(System.getProperty("user.dir"), "logs");
         if (!logFolder.exists()) {
@@ -137,10 +148,14 @@ public class NATLogger {
         console(YELLOW + "["+timeStamp()+"][WARN] " + msg + "\u001B[0m");
     }
     private void console(String msg) {
-        if(args.isConsoleLog()) {System.out.println(msg);}
+        if(args.isConsoleLog()) {
+            args.getPrintter().accept(msg);
+        }
     }
     private void debug(String msg) {
-        if(args.isDebug()) {System.out.println(msg);}
+        if(args.isDebug()) {
+            args.getPrintter().accept(msg);
+        }
     }
     private String timeStamp() {
         ZoneId zone = ZoneId.of(args.getTimeZone());
