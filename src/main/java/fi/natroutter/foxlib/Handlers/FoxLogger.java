@@ -28,7 +28,13 @@ public class FoxLogger {
         private File dataFolder = null;
         private boolean useColors = true;
         private boolean isMinecraft = false;
+        private boolean useTimeStamp = true;
         private Consumer<String> printter = System.out::println;
+
+        public Builder setUseTimeStamp(boolean useTimeStamp) {
+            this.useTimeStamp = useTimeStamp;
+            return this;
+        }
 
         public Builder setDataFolder(File dataFolder) {
             this.dataFolder = new File(dataFolder, "logs");
@@ -50,8 +56,8 @@ public class FoxLogger {
             return this;
         }
 
-        public Builder setPruneOlderThanDays(int seconds) {
-            this.pruneOlderThanDays = seconds;
+        public Builder setPruneOlderThanDays(int days) {
+            this.pruneOlderThanDays = days;
             return this;
         }
 
@@ -97,6 +103,7 @@ public class FoxLogger {
     private final String GREEN;
     private final String RED;
     private final String YELLOW;
+    private final String RESET;
 
     private FoxLogger(Builder builder) {
         this.args = builder;
@@ -105,6 +112,7 @@ public class FoxLogger {
         GREEN = args.isUseColors() ? (args.isMinecraft() ? "§a" : "\u001B[32m") : "";
         RED = args.isUseColors() ? (args.isMinecraft() ? "§c" : "\u001B[31m") : "";
         YELLOW = args.isUseColors() ? (args.isMinecraft() ? "§e" : "\u001B[33m") : "";
+        RESET = args.isUseColors() ? (args.isMinecraft() ? "§r" : "\u001B[0m") : "";
 
         logFolder = builder.getDataFolder() != null ? builder.getDataFolder() : new File(System.getProperty("user.dir"), "logs");
         if (!logFolder.exists()) {
@@ -130,22 +138,22 @@ public class FoxLogger {
     public void log(String msg) {
         if (args.isUseColors()) { msg = msg.replace("\n", "\n" + BLUE); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][LOG] " + msg);}
-        console(BLUE + "["+timeStamp()+"] " + msg + "\u001B[0m");
+        console(BLUE + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + msg + RESET);
     }
     public void info(String msg) {
         if (args.isUseColors()) { msg = msg.replace("\n", "\n" + GREEN); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][INFO] " + msg);}
-        console(GREEN + "["+timeStamp()+"][INFO] " + msg + "\u001B[0m");
+        console(GREEN + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "[INFO] " + msg + RESET);
     }
     public void error(String msg) {
         if (args.isUseColors()) { msg = msg.replace("\n", "\n" + RED); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][ERROR] " + msg);}
-        console(RED + "["+timeStamp()+"][ERROR] " + msg + "\u001B[0m");
+        console(RED + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "[ERROR] " + msg + RESET);
     }
     public void warn(String msg) {
         if (args.isUseColors()) { msg = msg.replace("\n", "\n" + YELLOW); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][WARN] " + msg);}
-        console(YELLOW + "["+timeStamp()+"][WARN] " + msg + "\u001B[0m");
+        console(YELLOW + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "[WARN] " + msg + RESET);
     }
     private void console(String msg) {
         if(args.isConsoleLog()) {
