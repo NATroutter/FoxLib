@@ -29,7 +29,13 @@ public class FoxLogger {
         private boolean useColors = true;
         private boolean isMinecraft = false;
         private boolean useTimeStamp = true;
+        private String loggerName = "FoxLogger";
         private Consumer<String> printter = System.out::println;
+
+        public Builder setLoggerName(String loggerName) {
+            this.loggerName = loggerName;
+            return this;
+        }
 
         public Builder setUseTimeStamp(boolean useTimeStamp) {
             this.useTimeStamp = useTimeStamp;
@@ -138,22 +144,22 @@ public class FoxLogger {
     public void log(String msg) {
         if (args.isUseColors()) { msg = msg.replace("\n", "\n" + BLUE); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][LOG] " + msg);}
-        console(BLUE + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + msg + RESET);
+        console(BLUE + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + msg + RESET);
     }
     public void info(String msg) {
         if (args.isUseColors()) { msg = msg.replace("\n", "\n" + GREEN); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][INFO] " + msg);}
-        console(GREEN + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "[INFO] " + msg + RESET);
+        console(GREEN + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[INFO] " + msg + RESET);
     }
     public void error(String msg) {
         if (args.isUseColors()) { msg = msg.replace("\n", "\n" + RED); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][ERROR] " + msg);}
-        console(RED + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "[ERROR] " + msg + RESET);
+        console(RED + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[ERROR] " + msg + RESET);
     }
     public void warn(String msg) {
         if (args.isUseColors()) { msg = msg.replace("\n", "\n" + YELLOW); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][WARN] " + msg);}
-        console(YELLOW + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "[WARN] " + msg + RESET);
+        console(YELLOW + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[WARN] " + msg + RESET);
     }
     private void console(String msg) {
         if(args.isConsoleLog()) {
@@ -162,7 +168,9 @@ public class FoxLogger {
     }
     private void debug(String msg) {
         if(args.isDebug()) {
-            args.getPrintter().accept(msg);
+            if (args.isUseColors()) { msg = msg.replace("\n", "\n" + BLUE); }
+            if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][DEBUG] " + msg);}
+            console(BLUE + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + msg + RESET);
         }
     }
     private String timeStamp() {
@@ -193,14 +201,14 @@ public class FoxLogger {
                 if (date.toInstant().isBefore(Ago.toInstant())) {
                     file.delete();
                     pruneCount++;
-                    debug("[Info/NATLogger] File deleted : " + file.getName());
+                    debug("File deleted : " + file.getName());
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
             return;
         }
-        debug("[Info/NATLogger] Pruned "+pruneCount+" old log files!");
+        debug("Pruned "+pruneCount+" old log files!");
     }
 
     private void save() {
@@ -221,16 +229,16 @@ public class FoxLogger {
             if (read.success()) {
                 oldContent = read.content();
             } else {
-                debug("[Error/NATLogger] Cant read log file! : " + read.status());
+                debug("Cant read log file! : " + read.status());
                 return;
             }
         }
         FileResponse write = FileUtils.writeFile(saveTo, oldContent + fullEntry);
         if (write.success()) {
             entries.clear();
-            debug("[Info/NATLogger] Log file saved!");
+            debug("Log file saved!");
             return;
         }
-        debug("[Error/NATLogger] Failed to write log file!");
+        debug("Failed to write log file!");
     }
 }
