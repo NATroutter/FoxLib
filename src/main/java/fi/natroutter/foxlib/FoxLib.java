@@ -7,7 +7,7 @@ import lombok.Getter;
 @Getter
 public class FoxLib {
 
-    public String Version = "1.0.10";
+    public String Version = "1.0.11";
 
 
     public static void print(Object message) {

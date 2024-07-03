@@ -75,6 +75,10 @@ public class DirectoryManager {
             directory = Path.of(System.getProperty("user.dir"), data.getSubDirectory()).toFile();
         }
 
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+
         data.onInitialized.accept(directory);
     }
 
