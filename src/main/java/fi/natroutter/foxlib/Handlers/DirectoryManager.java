@@ -92,10 +92,7 @@ public class DirectoryManager {
                         .setExportResource(false)
                         .onErrorLog(data.errorLogger)
                         .onInfoLog(data.infoLogger)
-                        .onInitialized(f->{
-                            System.out.println(f.success() + " - " + f.message());
-                            files.accept(f);
-                        })
+                        .onInitialized(files)
                         .build();
             }
         } else {

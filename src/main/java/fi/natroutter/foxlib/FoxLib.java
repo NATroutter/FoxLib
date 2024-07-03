@@ -7,29 +7,14 @@ import lombok.Getter;
 @Getter
 public class FoxLib {
 
-    public String Version = "1.0.9";
+    public String Version = "1.0.10";
 
 
     public static void print(Object message) {
         System.out.print(message.toString());
     }
-    public static void printLine(Object message) {
+    public static void printLn(Object message) {
         System.out.println(message.toString());
-    }
-
-    public static void main(String[] args) {
-
-        DirectoryManager dm = new DirectoryManager.Builder()
-                .setSubDirectory("embeds")
-                .onInitialized(file -> printLine("Path: " +file.toString()))
-                .build();
-
-        dm.getFilesContent(file -> {
-            printLine(file.message() + " - " + file.fileContent());
-        });
-
-
-
     }
 
 }

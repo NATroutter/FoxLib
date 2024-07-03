@@ -94,7 +94,6 @@ public class FileManager {
         if (!fileFolder.exists()) {
             fileFolder.mkdirs();
         }
-        System.out.println("test: " + file);
         if (!file.exists()) {
             if (data.isExportResource()) {
                 if (!exportResource(file, data.getFileName())) {
