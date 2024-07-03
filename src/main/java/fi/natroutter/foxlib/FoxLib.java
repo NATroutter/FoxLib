@@ -1,18 +1,35 @@
 package fi.natroutter.foxlib;
 
+import fi.natroutter.foxlib.Handlers.DirectoryManager;
+import fi.natroutter.foxlib.data.FileResponse;
 import lombok.Getter;
 
+@Getter
 public class FoxLib {
 
-    @Getter
-    public String Version = "1.0.7";
+    public String Version = "1.0.9";
 
-    public static void print(String message) {
-        System.out.print(message + "\u001B[0m");
+
+    public static void print(Object message) {
+        System.out.print(message.toString());
+    }
+    public static void printLine(Object message) {
+        System.out.println(message.toString());
     }
 
-    public static void printLine(String message) {
-        System.out.println(message + "\u001B[0m");
+    public static void main(String[] args) {
+
+        DirectoryManager dm = new DirectoryManager.Builder()
+                .setSubDirectory("embeds")
+                .onInitialized(file -> printLine("Path: " +file.toString()))
+                .build();
+
+        dm.getFilesContent(file -> {
+            printLine(file.message() + " - " + file.fileContent());
+        });
+
+
+
     }
 
 }

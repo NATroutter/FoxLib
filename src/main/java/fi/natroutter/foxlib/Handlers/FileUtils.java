@@ -15,10 +15,10 @@ public class FileUtils {
                 sb.append(line).append(System.lineSeparator());
                 line = br.readLine();
             }
-            return new FileResponse(true, "OK", sb.toString());
+            return new FileResponse(true, file.getName(), "OK", sb.toString());
         } catch (Exception e) {
             e.printStackTrace();
-            return new FileResponse(false, e.getMessage(), null);
+            return new FileResponse(false, file.getName(), e.getMessage(), null);
         }
     }
 
@@ -28,10 +28,10 @@ public class FileUtils {
                 file.createNewFile();
             }
             bw.write(Content);
-            return new FileResponse(true, "OK", null);
+            return new FileResponse(true, file.getName(), "OK", null);
         } catch (Exception e) {
             e.printStackTrace();
-            return new FileResponse(false, e.getMessage(), null);
+            return new FileResponse(false, file.getName(), e.getMessage(), null);
         }
     }
 

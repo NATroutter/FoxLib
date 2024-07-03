@@ -1,9 +1,11 @@
 package fi.natroutter.foxlib.Handlers;
 
+import fi.natroutter.foxlib.data.FileResponse;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.function.Consumer;
 
 public class FileManager {
@@ -11,7 +13,6 @@ public class FileManager {
     @Getter @AllArgsConstructor
     public static class Builder {
         private String fileName;
-        private String subFolder = "";
         private boolean exportResource = true;
         private File directory = null;
         private Consumer<String> errorLogger = message -> {
@@ -20,6 +21,8 @@ public class FileManager {
         private Consumer<String> infoLogger = message -> {
             System.out.println("FileManager/Info : " + message);
         };
+        private Consumer<FileResponse> onInitialized = file -> {};
+        private Consumer<FileResponse> onReload = file -> {};
 
         public Builder(String fileName) {
             this.fileName = fileName;
@@ -35,23 +38,28 @@ public class FileManager {
             return this;
         }
 
-        public Builder setSubFolder(String subFolder) {
-            this.subFolder = subFolder;
-            return this;
-        }
-
         public Builder setExportResource(boolean exportResource) {
             this.exportResource = exportResource;
             return this;
         }
 
-        public Builder setErrorLogger(Consumer<String> errorLogger) {
-            this.errorLogger = errorLogger;
+        public Builder onInitialized(Consumer<FileResponse> response) {
+            this.onInitialized = response;
             return this;
         }
 
-        public Builder setInfoLogger(Consumer<String> infoLogger) {
-            this.infoLogger = infoLogger;
+        public Builder onReload(Consumer<FileResponse> response) {
+            this.onReload = response;
+            return this;
+        }
+
+        public Builder onErrorLog(Consumer<String> message) {
+            this.errorLogger = message;
+            return this;
+        }
+
+        public Builder onInfoLog(Consumer<String> message) {
+            this.infoLogger = message;
             return this;
         }
 
@@ -68,16 +76,17 @@ public class FileManager {
     private File fileFolder;
     private String FileContent;
 
-    @Getter
-    private boolean initialized = false;
-
     private FileManager(Builder builder) {
         this.data = builder;
 
+        if (data.getFileName().startsWith("/") || data.getFileName().startsWith("\\")) {
+            data.setFileName(data.getFileName().substring(1));
+        }
+
         if (builder.getDirectory() != null) {
-            file = new File(builder.getDirectory(), (data.getSubFolder().length() > 0 && !data.getSubFolder().isBlank() ? data.getSubFolder() + "/" : "") + data.getFileName());
+            file = Path.of(builder.getDirectory().toString(), data.getFileName()).toFile();
         } else {
-            file = new File(System.getProperty("user.dir"), (data.getSubFolder().length() > 0 && !data.getSubFolder().isBlank() ? data.getSubFolder() + "/" : "") + data.getFileName());
+            file = Path.of(System.getProperty("user.dir"), data.getFileName()).toFile();
         }
 
         fileFolder = new File(file.getParent());
@@ -85,27 +94,47 @@ public class FileManager {
         if (!fileFolder.exists()) {
             fileFolder.mkdirs();
         }
+        System.out.println("test: " + file);
         if (!file.exists()) {
             if (data.isExportResource()) {
                 if (!exportResource(file, data.getFileName())) {
                     return;
                 }
             } else {
-                data.getErrorLogger().accept(data.getFileName() + " doesn't exists!");
+                error(data.getFileName() + " doesn't exists!");
                 return;
             }
         }
-        if (data.isExportResource()) {
-            reload();
+
+        //load file
+        FileResponse response = FileUtils.readFile(file);
+        data.getOnInitialized().accept(response);
+
+        FileContent = response.fileContent();
+        if (FileContent == null) {
+            error(data.getFileName() + " Failed to Loaded!");
+            return;
         }
+        info(data.getFileName() + " Loaded!");
+    }
+
+    private void info(Object message) {
+        data.getInfoLogger().accept(message.toString());
+    }
+    private void error(Object message) {
+        data.getErrorLogger().accept(message.toString());
     }
 
     public void reload() {
-        FileContent = FileUtils.readFile(file).content();
-        if (FileContent != null) {
-            data.getInfoLogger().accept(data.getFileName() + " Loaded!");
-            initialized = true;
+        FileResponse response = FileUtils.readFile(file);
+        data.getOnReload().accept(response);
+
+        FileContent = response.fileContent();
+        if (FileContent == null) {
+            error(data.getFileName() + " Failed to Loaded!");
+            return;
         }
+       info(data.getFileName() + " Loaded!");
     }
 
     public String get() { return FileContent; }
@@ -118,7 +147,7 @@ public class FileManager {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         try(InputStream stream = classLoader.getResourceAsStream(resourceName); OutputStream resStreamOut = new FileOutputStream(file)) {
             if(stream == null) {
-                data.getErrorLogger().accept("Failed to export resource : " + resourceName);
+                error("Failed to export resource : " + resourceName);
                 return false;
             }
 
