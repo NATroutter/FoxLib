@@ -1,5 +1,6 @@
 package fi.natroutter.foxlib.Handlers;
 
+import fi.natroutter.foxlib.FoxLib;
 import fi.natroutter.foxlib.data.FileResponse;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -8,12 +9,15 @@ import java.io.*;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 
+
 public class FileManager {
 
     @Getter @AllArgsConstructor
     public static class Builder {
         private String fileName;
+        private String logFileNameFormat = "@";
         private boolean exportResource = true;
+        private boolean loading = true;
         private File directory = null;
         private Consumer<String> errorLogger = message -> {
             System.out.println("FileManager/Error : " + message);
@@ -28,6 +32,11 @@ public class FileManager {
             this.fileName = fileName;
         }
 
+        public Builder setLogFileNameFormat(String format) {
+            this.logFileNameFormat = format;
+            return this;
+        }
+
         public Builder setFileName(String fileName) {
             this.fileName = fileName;
             return this;
@@ -37,7 +46,10 @@ public class FileManager {
             this.directory = directory;
             return this;
         }
-
+        public Builder setLoading(boolean loading) {
+            this.loading = loading;
+            return this;
+        }
         public Builder setExportResource(boolean exportResource) {
             this.exportResource = exportResource;
             return this;
@@ -94,29 +106,35 @@ public class FileManager {
         if (!fileFolder.exists()) {
             fileFolder.mkdirs();
         }
-        if (!file.exists()) {
-            if (data.isExportResource()) {
-                if (!exportResource(file, data.getFileName())) {
-                    return;
-                }
+
+        if (!file.exists() && data.isExportResource()) {
+            if (exportResource(file, data.getFileName())) {
+                info(name(data.getFileName()) + " Created!");
             } else {
-                error(data.getFileName() + " doesn't exists!");
                 return;
             }
         }
 
-        //load file
-        FileResponse response = FileUtils.readFile(file);
-        data.getOnInitialized().accept(response);
 
-        FileContent = response.fileContent();
-        if (FileContent == null) {
-            error(data.getFileName() + " Failed to Loaded!");
-            return;
+        //load file
+        if (data.isLoading()) {
+            FileResponse response = FileUtils.readFile(file);
+            data.getOnInitialized().accept(response);
+
+            FileContent = response.content();
+            if (FileContent == null) {
+                error(name(data.getFileName()) + " Failed to Loaded!");
+                return;
+            }
+            info(name(data.getFileName()) + " Loaded!");
+        } else {
+            data.getOnInitialized().accept(null);
         }
-        info(data.getFileName() + " Loaded!");
     }
 
+    private String name(Object name) {
+        return data.getLogFileNameFormat().replace("@", name.toString());
+    }
     private void info(Object message) {
         data.getInfoLogger().accept(message.toString());
     }
@@ -128,12 +146,12 @@ public class FileManager {
         FileResponse response = FileUtils.readFile(file);
         data.getOnReload().accept(response);
 
-        FileContent = response.fileContent();
+        FileContent = response.content();
         if (FileContent == null) {
-            error(data.getFileName() + " Failed to Loaded!");
+            error(name(data.getFileName()) + " Failed to Loaded!");
             return;
         }
-       info(data.getFileName() + " Loaded!");
+       info(name(data.getFileName()) + " Loaded!");
     }
 
     public String get() { return FileContent; }
@@ -144,20 +162,23 @@ public class FileManager {
 
     private boolean exportResource(File file, String resourceName) {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        try(InputStream stream = classLoader.getResourceAsStream(resourceName); OutputStream resStreamOut = new FileOutputStream(file)) {
+        try(InputStream stream = classLoader.getResourceAsStream(resourceName)) {
             if(stream == null) {
-                error("Failed to export resource : " + resourceName);
+                error("Failed to export resource ("+resourceName+") : File doesn't exist");
                 return false;
             }
-
-            int readBytes;
-            byte[] buffer = new byte[4096];
-            while ((readBytes = stream.read(buffer)) > 0) {
-                resStreamOut.write(buffer, 0, readBytes);
+            try(OutputStream resStreamOut = new FileOutputStream(file)) {
+                int readBytes;
+                byte[] buffer = new byte[4096];
+                while ((readBytes = stream.read(buffer)) > 0) {
+                    resStreamOut.write(buffer, 0, readBytes);
+                }
+                return true;
+            } catch (Exception ex) {
+                error("Failed to export resource ("+resourceName+") : " + ex.getCause().getMessage());
             }
-            return true;
         } catch (Exception ex) {
-            ex.printStackTrace();
+            error("Failed to export resource ("+resourceName+") : " + ex.getCause().getMessage());
         }
         return false;
     }

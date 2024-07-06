@@ -1,11 +1,13 @@
 package fi.natroutter.foxlib.Handlers;
 
+import fi.natroutter.foxlib.FoxLib;
 import fi.natroutter.foxlib.data.FileResponse;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -15,7 +17,8 @@ public class MultiFileManager {
     @Getter @AllArgsConstructor @NoArgsConstructor
     public static class Builder {
         private List<String> fileNames;
-        private boolean exportFiles = true;
+        private boolean exportResource = true;
+        private boolean loading = true;
         private File directory = null;
         private Consumer<String> errorLogger = message -> {
             System.out.println("MultiFileManager/Error : " + message);
@@ -33,8 +36,12 @@ public class MultiFileManager {
             this.fileNames = fileNames;
             return this;
         }
-        public Builder setExportFiles(boolean value) {
-            this.exportFiles = value;
+        public Builder setExportResource(boolean value) {
+            this.exportResource = value;
+            return this;
+        }
+        public Builder setLoading(boolean value) {
+            this.loading = value;
             return this;
         }
 
@@ -67,20 +74,27 @@ public class MultiFileManager {
 
     private final Builder data;
 
-    private MultiFileManager(Builder builder) {
-        this.data = builder;
+    private MultiFileManager(Builder data) {
+        this.data = data;
 
         List<FileResponse> responses = new ArrayList<>();
 
-        for(String name : data.getFileNames()) {
 
+        for(String name : data.getFileNames()) {
+            File path;
+            if (data.getDirectory() != null) {
+                path = Path.of(data.getDirectory().toString()).toFile();
+            } else {
+                path = Path.of(System.getProperty("user.dir")).toFile();
+            }
             new FileManager.Builder(name)
-                .setDirectory(data.getDirectory())
-                .setExportResource(data.isExportFiles())
+                .setDirectory(path)
+                .setExportResource(data.isExportResource())
+                .setLoading(data.isLoading())
                 .onInfoLog(data.infoLogger)
                 .onErrorLog(data.errorLogger)
                 .onInitialized(file -> {
-                    if (file.success()) {
+                    if (file != null && file.success()) {
                         responses.add(file);
                     }
                 })

@@ -17,6 +17,7 @@ public class DirectoryManager {
     public static class Builder {
         private File directory = null;
         private String subDirectory = null;
+        private List<String> allowedExtensions = new ArrayList<>();
         private Consumer<String> errorLogger = message -> {
             System.out.println("DirectoryManager/Error : " + message);
         };
@@ -29,7 +30,10 @@ public class DirectoryManager {
             this.directory = directory;
             return this;
         }
-
+        public Builder setAllowedExtensions(List<String> allowedExtensions) {
+            this.allowedExtensions = allowedExtensions;
+            return this;
+        }
         public Builder setSubDirectory(String subDirectory) {
             this.subDirectory = subDirectory;
             return this;
@@ -82,21 +86,31 @@ public class DirectoryManager {
         data.onInitialized.accept(directory);
     }
 
-    public void getFilesContent(Consumer<FileResponse> files) {
+    public void readAllFiles(Consumer<FileResponse> file) {
 
         File[] fileArray = directory.listFiles();
         if (fileArray == null) {
             error("Invalid Directory!");
             return;
         }
+
         if (fileArray.length > 0) {
-            for (File file : fileArray) {
-                new FileManager.Builder(file.getName())
-                        .setDirectory(file.getParentFile())
+            for (File entry : fileArray) {
+                if (!entry.isFile()) continue;
+
+                if (!data.getAllowedExtensions().isEmpty()) {
+                    if (!data.getAllowedExtensions().contains(FileUtils.getExt(entry))) {
+                        continue;
+                    }
+                }
+
+                new FileManager.Builder(entry.getName())
+                        .setDirectory(entry.getParentFile())
                         .setExportResource(false)
                         .onErrorLog(data.errorLogger)
                         .onInfoLog(data.infoLogger)
-                        .onInitialized(files)
+                        .setLogFileNameFormat(data.getSubDirectory()!=null ? data.getSubDirectory() +"/@" : "@")
+                        .onInitialized(file)
                         .build();
             }
         } else {

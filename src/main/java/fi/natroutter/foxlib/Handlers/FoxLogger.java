@@ -227,7 +227,7 @@ public class FoxLogger {
         if (saveTo.exists()) {
             FileResponse read = FileUtils.readFile(saveTo);
             if (read.success()) {
-                oldContent = read.fileContent();
+                oldContent = read.content();
             } else {
                 debug("Cant read log file! : " + read.message());
                 return;
