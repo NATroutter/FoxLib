@@ -1,18 +1,23 @@
 package fi.natroutter.foxlib.Handlers;
 
+import fi.natroutter.foxlib.FoxLib;
+import fi.natroutter.foxlib.data.FileResponse;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.function.Consumer;
+
 
 public class FileManager {
 
     @Getter @AllArgsConstructor
     public static class Builder {
         private String fileName;
-        private String subFolder = "";
+        private String logFileNameFormat = "@";
         private boolean exportResource = true;
+        private boolean loading = true;
         private File directory = null;
         private Consumer<String> errorLogger = message -> {
             System.out.println("FileManager/Error : " + message);
@@ -20,9 +25,16 @@ public class FileManager {
         private Consumer<String> infoLogger = message -> {
             System.out.println("FileManager/Info : " + message);
         };
+        private Consumer<FileResponse> onInitialized = file -> {};
+        private Consumer<FileResponse> onReload = file -> {};
 
         public Builder(String fileName) {
             this.fileName = fileName;
+        }
+
+        public Builder setLogFileNameFormat(String format) {
+            this.logFileNameFormat = format;
+            return this;
         }
 
         public Builder setFileName(String fileName) {
@@ -34,24 +46,32 @@ public class FileManager {
             this.directory = directory;
             return this;
         }
-
-        public Builder setSubFolder(String subFolder) {
-            this.subFolder = subFolder;
+        public Builder setLoading(boolean loading) {
+            this.loading = loading;
             return this;
         }
-
         public Builder setExportResource(boolean exportResource) {
             this.exportResource = exportResource;
             return this;
         }
 
-        public Builder setErrorLogger(Consumer<String> errorLogger) {
-            this.errorLogger = errorLogger;
+        public Builder onInitialized(Consumer<FileResponse> response) {
+            this.onInitialized = response;
             return this;
         }
 
-        public Builder setInfoLogger(Consumer<String> infoLogger) {
-            this.infoLogger = infoLogger;
+        public Builder onReload(Consumer<FileResponse> response) {
+            this.onReload = response;
+            return this;
+        }
+
+        public Builder onErrorLog(Consumer<String> message) {
+            this.errorLogger = message;
+            return this;
+        }
+
+        public Builder onInfoLog(Consumer<String> message) {
+            this.infoLogger = message;
             return this;
         }
 
@@ -68,16 +88,17 @@ public class FileManager {
     private File fileFolder;
     private String FileContent;
 
-    @Getter
-    private boolean initialized = false;
-
     private FileManager(Builder builder) {
         this.data = builder;
 
+        if (data.getFileName().startsWith("/") || data.getFileName().startsWith("\\")) {
+            data.setFileName(data.getFileName().substring(1));
+        }
+
         if (builder.getDirectory() != null) {
-            file = new File(builder.getDirectory(), (data.getSubFolder().length() > 0 && !data.getSubFolder().isBlank() ? data.getSubFolder() + "/" : "") + data.getFileName());
+            file = Path.of(builder.getDirectory().toString(), data.getFileName()).toFile();
         } else {
-            file = new File(System.getProperty("user.dir"), (data.getSubFolder().length() > 0 && !data.getSubFolder().isBlank() ? data.getSubFolder() + "/" : "") + data.getFileName());
+            file = Path.of(System.getProperty("user.dir"), data.getFileName()).toFile();
         }
 
         fileFolder = new File(file.getParent());
@@ -85,27 +106,52 @@ public class FileManager {
         if (!fileFolder.exists()) {
             fileFolder.mkdirs();
         }
-        if (!file.exists()) {
-            if (data.isExportResource()) {
-                if (!exportResource(file, data.getFileName())) {
-                    return;
-                }
+
+        if (!file.exists() && data.isExportResource()) {
+            if (exportResource(file, data.getFileName())) {
+                info(name(data.getFileName()) + " Created!");
             } else {
-                data.getErrorLogger().accept(data.getFileName() + " doesn't exists!");
                 return;
             }
         }
-        if (data.isExportResource()) {
-            reload();
+
+
+        //load file
+        if (data.isLoading()) {
+            FileResponse response = FileUtils.readFile(file);
+            data.getOnInitialized().accept(response);
+
+            FileContent = response.content();
+            if (FileContent == null) {
+                error(name(data.getFileName()) + " Failed to Loaded!");
+                return;
+            }
+            info(name(data.getFileName()) + " Loaded!");
+        } else {
+            data.getOnInitialized().accept(null);
         }
     }
 
+    private String name(Object name) {
+        return data.getLogFileNameFormat().replace("@", name.toString());
+    }
+    private void info(Object message) {
+        data.getInfoLogger().accept(message.toString());
+    }
+    private void error(Object message) {
+        data.getErrorLogger().accept(message.toString());
+    }
+
     public void reload() {
-        FileContent = FileUtils.readFile(file).content();
-        if (FileContent != null) {
-            data.getInfoLogger().accept(data.getFileName() + " Loaded!");
-            initialized = true;
+        FileResponse response = FileUtils.readFile(file);
+        data.getOnReload().accept(response);
+
+        FileContent = response.content();
+        if (FileContent == null) {
+            error(name(data.getFileName()) + " Failed to Loaded!");
+            return;
         }
+       info(name(data.getFileName()) + " Loaded!");
     }
 
     public String get() { return FileContent; }
@@ -116,20 +162,23 @@ public class FileManager {
 
     private boolean exportResource(File file, String resourceName) {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        try(InputStream stream = classLoader.getResourceAsStream(resourceName); OutputStream resStreamOut = new FileOutputStream(file)) {
+        try(InputStream stream = classLoader.getResourceAsStream(resourceName)) {
             if(stream == null) {
-                data.getErrorLogger().accept("Failed to export resource : " + resourceName);
+                error("Failed to export resource ("+resourceName+") : File doesn't exist");
                 return false;
             }
-
-            int readBytes;
-            byte[] buffer = new byte[4096];
-            while ((readBytes = stream.read(buffer)) > 0) {
-                resStreamOut.write(buffer, 0, readBytes);
+            try(OutputStream resStreamOut = new FileOutputStream(file)) {
+                int readBytes;
+                byte[] buffer = new byte[4096];
+                while ((readBytes = stream.read(buffer)) > 0) {
+                    resStreamOut.write(buffer, 0, readBytes);
+                }
+                return true;
+            } catch (Exception ex) {
+                error("Failed to export resource ("+resourceName+") : " + ex.getCause().getMessage());
             }
-            return true;
         } catch (Exception ex) {
-            ex.printStackTrace();
+            error("Failed to export resource ("+resourceName+") : " + ex.getCause().getMessage());
         }
         return false;
     }

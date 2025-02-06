@@ -229,7 +229,7 @@ public class FoxLogger {
             if (read.success()) {
                 oldContent = read.content();
             } else {
-                debug("Cant read log file! : " + read.status());
+                debug("Cant read log file! : " + read.message());
                 return;
             }
         }
