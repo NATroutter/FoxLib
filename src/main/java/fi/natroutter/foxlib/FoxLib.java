@@ -2,8 +2,6 @@ package fi.natroutter.foxlib;
 
 import lombok.Getter;
 
-public class FoxLib {
-
 @Getter
 public class FoxLib {
 
