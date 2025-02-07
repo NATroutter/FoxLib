@@ -29,7 +29,9 @@ public class FoxLogger {
         private String timeFormat = "dd.MM.yyyy-HH:mm:ss";
         private String timeZone = "Europe/Helsinki";
         private File dataFolder = null;
-        public  String parentFolder = null;
+        private String parentFolder = null;
+        private String logNameSuffix = "Log";
+        private LogDateFormat logDateFormat = LogDateFormat.MONTH_DAY_YEAR;
         private boolean useColors = true;
         private boolean isMinecraft = false;
         private boolean useTimeStamp = true;
@@ -55,7 +57,14 @@ public class FoxLogger {
             this.parentFolder = parentFolder;
             return this;
         }
-
+        public Builder setLogNameSuffix(String suffix) {
+            this.logNameSuffix = suffix;
+            return this;
+        }
+        public Builder setLogFormat(LogDateFormat format) {
+            this.logDateFormat = format;
+            return this;
+        }
         public Builder setPrintter(Consumer<String> printter) {
             this.printter = printter;
             return this;
@@ -234,7 +243,13 @@ public class FoxLogger {
             logFolder.mkdirs();
         }
         ZonedDateTime now = ZonedDateTime.now();
-        String fileName = "Log_" + now.getDayOfMonth() + "-" + now.getMonthValue() + "-" + now.getYear() + ".log";
+        String fileName = args.getLogNameSuffix() + "_";
+
+        switch (args.getLogDateFormat()) {
+            case MONTH_DAY_YEAR -> fileName += now.getMonthValue() + "-" + now.getDayOfMonth() + "-" + now.getYear() + ".log";
+            case DAY_MONTH_YEAR -> fileName += now.getDayOfMonth() + "-" + now.getMonthValue() + "-" + now.getYear() + ".log";
+        }
+
         File saveTo = new File(logFolder, fileName);
 
         StringBuilder fullEntry = new StringBuilder();
