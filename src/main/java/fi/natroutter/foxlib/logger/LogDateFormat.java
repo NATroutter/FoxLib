@@ -1,4 +1,4 @@
-package fi.natroutter.foxlib.Handlers;
+package fi.natroutter.foxlib.logger;
 
 public enum LogDateFormat {
 

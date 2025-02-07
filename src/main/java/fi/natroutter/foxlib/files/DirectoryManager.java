@@ -1,7 +1,6 @@
-package fi.natroutter.foxlib.Handlers;
+package fi.natroutter.foxlib.files;
 
-import fi.natroutter.foxlib.data.FileResponse;
-import fi.natroutter.foxlib.utilities.FileUtils;
+import fi.natroutter.foxlib.FoxLib;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -100,7 +99,7 @@ public class DirectoryManager {
                 if (!entry.isFile()) continue;
 
                 if (!data.getAllowedExtensions().isEmpty()) {
-                    if (!data.getAllowedExtensions().contains(FileUtils.getExt(entry))) {
+                    if (!data.getAllowedExtensions().contains(FoxLib.getExt(entry))) {
                         continue;
                     }
                 }

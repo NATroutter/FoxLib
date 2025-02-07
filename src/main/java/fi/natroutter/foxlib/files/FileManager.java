@@ -1,7 +1,6 @@
-package fi.natroutter.foxlib.Handlers;
+package fi.natroutter.foxlib.files;
 
-import fi.natroutter.foxlib.data.FileResponse;
-import fi.natroutter.foxlib.utilities.FileUtils;
+import fi.natroutter.foxlib.FoxLib;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -118,7 +117,7 @@ public class FileManager {
 
         //load file
         if (data.isLoading()) {
-            FileResponse response = FileUtils.readFile(file);
+            FileResponse response = FoxLib.readFile(file);
             data.getOnInitialized().accept(response);
 
             FileContent = response.content();
@@ -143,7 +142,7 @@ public class FileManager {
     }
 
     public void reload() {
-        FileResponse response = FileUtils.readFile(file);
+        FileResponse response = FoxLib.readFile(file);
         data.getOnReload().accept(response);
 
         FileContent = response.content();
@@ -157,7 +156,7 @@ public class FileManager {
     public String get() { return FileContent; }
 
     public void save(String data) {
-    	FileUtils.writeFile(file, data);
+        FoxLib.writeFile(file, data);
     }
 
     private boolean exportResource(File file, String resourceName) {

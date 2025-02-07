@@ -1,13 +1,12 @@
-package fi.natroutter.foxlib.Handlers;
+package fi.natroutter.foxlib.logger;
 
-import fi.natroutter.foxlib.data.FileResponse;
-import fi.natroutter.foxlib.utilities.FileUtils;
+import fi.natroutter.foxlib.FoxLib;
+import fi.natroutter.foxlib.files.FileResponse;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -258,7 +257,7 @@ public class FoxLogger {
         }
         String oldContent = "";
         if (saveTo.exists()) {
-            FileResponse read = FileUtils.readFile(saveTo);
+            FileResponse read = FoxLib.readFile(saveTo);
             if (read.success()) {
                 oldContent = read.content();
             } else {
@@ -266,7 +265,7 @@ public class FoxLogger {
                 return;
             }
         }
-        FileResponse write = FileUtils.writeFile(saveTo, oldContent + fullEntry);
+        FileResponse write = FoxLib.writeFile(saveTo, oldContent + fullEntry);
         if (write.success()) {
             entries.clear();
             debug("Log file saved!");
