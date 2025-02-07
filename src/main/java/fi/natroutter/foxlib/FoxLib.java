@@ -11,7 +11,7 @@ import java.util.List;
 @Getter
 public class FoxLib {
 
-    public String Version = "1.2.1";
+    public String Version = "1.2.2";
 
     public static void print(Object message) {
         System.out.print(message.toString());
