@@ -7,11 +7,12 @@ import java.io.*;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Getter
 public class FoxLib {
 
-    public String Version = "1.2.2";
+    public String Version = "1.2.3";
 
     public static void print(Object message) {
         System.out.print(message.toString());
@@ -58,6 +59,10 @@ public class FoxLib {
             parts.add(randomString(partLenght));
         }
         return String.join("-", parts);
+    }
+
+    public static int random(int min, int max) {
+        return ThreadLocalRandom.current().nextInt(min, max + 1);
     }
 
     public static FileResponse readFile(File file) {
