@@ -6,7 +6,10 @@
 
     <groupId>fi.natroutter</groupId>
     <artifactId>foxlib</artifactId>
-    <version>1.1.0</version>
+
+    <!-- !!!! REMEMBER TO CHANGE VERSION IN FoxLib CLASS !!!! -->
+    <version>1.1.1</version>
+
     <packaging>jar</packaging>
 
     <name>FoxLib</name>

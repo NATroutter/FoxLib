@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -27,6 +29,7 @@ public class FoxLogger {
         private String timeFormat = "dd.MM.yyyy-HH:mm:ss";
         private String timeZone = "Europe/Helsinki";
         private File dataFolder = null;
+        public  String parentFolder = null;
         private boolean useColors = true;
         private boolean isMinecraft = false;
         private boolean useTimeStamp = true;
@@ -44,7 +47,12 @@ public class FoxLogger {
         }
 
         public Builder setDataFolder(File dataFolder) {
-            this.dataFolder = new File(dataFolder, "logs");
+            this.dataFolder = dataFolder;
+            return this;
+        }
+
+        public Builder setParentFolder(String parentFolder) {
+            this.parentFolder = parentFolder;
             return this;
         }
 
@@ -121,7 +129,16 @@ public class FoxLogger {
         YELLOW = args.isUseColors() ? (args.isMinecraft() ? "§e" : "\u001B[33m") : "";
         RESET = args.isUseColors() ? (args.isMinecraft() ? "§r" : "\u001B[0m") : "";
 
-        logFolder = builder.getDataFolder() != null ? builder.getDataFolder() : new File(System.getProperty("user.dir"), "logs");
+        if (builder.getDataFolder() != null) {
+            logFolder = Paths.get(builder.getDataFolder().getAbsolutePath(), "logs").toFile();
+        } else {
+            if (builder.getParentFolder() != null) {
+                logFolder = Paths.get(System.getProperty("user.dir"), builder.getParentFolder(), "logs").toFile();
+            } else {
+                logFolder = new File(System.getProperty("user.dir"), "logs");
+            }
+        }
+
         if (!logFolder.exists()) {
             logFolder.mkdirs();
         }
