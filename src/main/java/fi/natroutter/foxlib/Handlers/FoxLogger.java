@@ -1,6 +1,7 @@
 package fi.natroutter.foxlib.Handlers;
 
 import fi.natroutter.foxlib.data.FileResponse;
+import fi.natroutter.foxlib.utilities.FileUtils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
