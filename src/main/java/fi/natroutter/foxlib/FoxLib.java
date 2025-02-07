@@ -12,12 +12,12 @@ import java.util.concurrent.ThreadLocalRandom;
 @Getter
 public class FoxLib {
 
-    public String Version = "1.2.3";
+    public String Version = "1.3.0";
 
     public static void print(Object message) {
         System.out.print(message.toString());
     }
-    public static void printLn(Object message) {
+    public static void println(Object message) {
         System.out.println(message.toString());
     }
 
