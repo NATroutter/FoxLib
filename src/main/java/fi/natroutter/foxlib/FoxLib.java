@@ -11,7 +11,7 @@ import java.util.List;
 @Getter
 public class FoxLib {
 
-    public String Version = "1.2.0";
+    public String Version = "1.2.1";
 
     public static void print(Object message) {
         System.out.print(message.toString());
@@ -22,6 +22,25 @@ public class FoxLib {
 
     public static boolean isBetween(long number, long min, long max) {
         return number >= min && number <= max;
+    }
+
+
+    public static boolean isBlank(String str) {
+        if (str == null) return true;
+
+        int len = str.length();
+        if (len == 0) return true;
+
+        for (int i = 0; i < len; i++) {
+            if (!Character.isWhitespace(str.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean isNotBlank(String str) {
+        return !isBlank(str);
     }
 
     private static String randomString(int length) {
