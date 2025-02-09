@@ -24,8 +24,8 @@ public class FileManager {
         private Consumer<String> infoLogger = message -> {
             System.out.println("FileManager/Info : " + message);
         };
-        private Consumer<FileResponse> onInitialized = file -> {};
-        private Consumer<FileResponse> onReload = file -> {};
+        private Consumer<ReadResponse> onInitialized = file -> {};
+        private Consumer<ReadResponse> onReload = file -> {};
 
         public Builder(String fileName) {
             this.fileName = fileName;
@@ -54,12 +54,12 @@ public class FileManager {
             return this;
         }
 
-        public Builder onInitialized(Consumer<FileResponse> response) {
+        public Builder onInitialized(Consumer<ReadResponse> response) {
             this.onInitialized = response;
             return this;
         }
 
-        public Builder onReload(Consumer<FileResponse> response) {
+        public Builder onReload(Consumer<ReadResponse> response) {
             this.onReload = response;
             return this;
         }
@@ -117,7 +117,7 @@ public class FileManager {
 
         //load file
         if (data.isLoading()) {
-            FileResponse response = FoxLib.readFile(file);
+            ReadResponse response = FoxLib.readFile(file);
             data.getOnInitialized().accept(response);
 
             FileContent = response.content();
@@ -142,7 +142,7 @@ public class FileManager {
     }
 
     public void reload() {
-        FileResponse response = FoxLib.readFile(file);
+        ReadResponse response = FoxLib.readFile(file);
         data.getOnReload().accept(response);
 
         FileContent = response.content();

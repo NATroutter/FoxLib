@@ -1,6 +1,7 @@
 package fi.natroutter.foxlib;
 
-import fi.natroutter.foxlib.files.FileResponse;
+import fi.natroutter.foxlib.files.ReadResponse;
+import fi.natroutter.foxlib.files.WriteResponse;
 import lombok.Getter;
 
 import java.io.*;
@@ -12,7 +13,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Getter
 public class FoxLib {
 
-    public String Version = "1.3.0";
+    public String Version = "1.3.1";
 
     public static void print(Object message) {
         System.out.print(message.toString());
@@ -65,7 +66,7 @@ public class FoxLib {
         return ThreadLocalRandom.current().nextInt(min, max + 1);
     }
 
-    public static FileResponse readFile(File file) {
+    public static ReadResponse readFile(File file) {
         try (FileReader fr = new FileReader(file); BufferedReader br = new BufferedReader(fr)) {
             StringBuilder sb = new StringBuilder();
             String line = br.readLine();
@@ -74,27 +75,25 @@ public class FoxLib {
                 sb.append(line).append(System.lineSeparator());
                 line = br.readLine();
             }
-            return new FileResponse(true, file.getName(), "OK", sb.toString());
+            return new ReadResponse(true, file.getName(), "OK", sb.toString());
         } catch (Exception e) {
-            e.printStackTrace();
-            return new FileResponse(false, file.getName(), e.getMessage(), null);
+            return new ReadResponse(false, file.getName(), e.getMessage(), null);
         }
     }
 
-    public static FileResponse writeFile(File file, String Content) {
+    public static WriteResponse writeFile(File file, String Content) {
         try(FileWriter fw = new FileWriter(file); BufferedWriter bw = new BufferedWriter(fw);) {
             if (!file.exists()) {
                 file.createNewFile();
             }
             bw.write(Content);
-            return new FileResponse(true, file.getName(), "OK", null);
+            return new WriteResponse(true, file.getName(), "OK");
         } catch (Exception e) {
-            e.printStackTrace();
-            return new FileResponse(false, file.getName(), e.getMessage(), null);
+            return new WriteResponse(false, file.getName(), e.getMessage());
         }
     }
 
-    public static String getBasename(FileResponse resp) { return getBasename(resp.name()); }
+    public static String getBasename(ReadResponse resp) { return getBasename(resp.name()); }
     public static String getBasename(File file) { return getBasename(file.getName()); }
     public static String getBasename(String fileName) {
         Path path = Path.of(fileName);
@@ -103,7 +102,7 @@ public class FoxLib {
         return (lastDotIndex > 0) ? fullName.substring(0, lastDotIndex) : fullName;
     }
 
-    public static String getExt(FileResponse resp) { return getExt(resp.name()); }
+    public static String getExt(ReadResponse resp) { return getExt(resp.name()); }
     public static String getExt(File file) { return getExt(file.getName()); }
     public static String getExt(String fileName) {
         if (!fileName.contains(".")) return fileName;

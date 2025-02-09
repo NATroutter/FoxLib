@@ -86,7 +86,7 @@ public class DirectoryManager {
         data.onInitialized.accept(directory);
     }
 
-    public void readAllFiles(Consumer<FileResponse> file) {
+    public void readAllFiles(Consumer<ReadResponse> file) {
 
         File[] fileArray = directory.listFiles();
         if (fileArray == null) {

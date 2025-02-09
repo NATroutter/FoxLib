@@ -24,7 +24,7 @@ public class MultiFileManager {
         private Consumer<String> infoLogger = message -> {
             System.out.println("MultiFileManager/Info : " + message);
         };
-        private Consumer<List<FileResponse>> onInitialized = file -> {};
+        private Consumer<List<ReadResponse>> onInitialized = file -> {};
 
         public Builder setDirectory(File directory) {
             this.directory = directory;
@@ -43,7 +43,7 @@ public class MultiFileManager {
             return this;
         }
 
-        public Builder onInitialized(Consumer<List<FileResponse>> response) {
+        public Builder onInitialized(Consumer<List<ReadResponse>> response) {
             this.onInitialized = response;
             return this;
         }
@@ -75,7 +75,7 @@ public class MultiFileManager {
     private MultiFileManager(Builder data) {
         this.data = data;
 
-        List<FileResponse> responses = new ArrayList<>();
+        List<ReadResponse> responses = new ArrayList<>();
 
 
         for(String name : data.getFileNames()) {
