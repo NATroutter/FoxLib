@@ -1,11 +1,13 @@
 package fi.natroutter.foxlib;
 
+import fi.natroutter.foxlib.config.ConfigProvider;
 import fi.natroutter.foxlib.files.ReadResponse;
 import fi.natroutter.foxlib.files.WriteResponse;
 import lombok.Getter;
 
 import java.io.*;
 import java.nio.file.Path;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
@@ -13,7 +15,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Getter
 public class FoxLib {
 
-    public String Version = "1.3.1";
+    public String Version = "1.3.2";
 
     public static void print(Object message) {
         System.out.print(message.toString());
@@ -25,7 +27,6 @@ public class FoxLib {
     public static boolean isBetween(long number, long min, long max) {
         return number >= min && number <= max;
     }
-
 
     public static boolean isBlank(String str) {
         if (str == null) return true;
@@ -45,16 +46,30 @@ public class FoxLib {
         return !isBlank(str);
     }
 
+    public static <T> List<T> addToList(ArrayList<T> list, T item) {
+        if (!list.contains(item)) {
+            list.add(item);
+        }
+        return list;
+    }
+
     private static String randomString(int length) {
+        return randomString(length,0L);
+    }
+    private static String randomString(int length, long seed) {
         String table = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        SecureRandom random = new SecureRandom();
+        if (seed > 0L) {
+            random.setSeed(seed);
+        }
         StringBuilder sb = new StringBuilder(length);
         for (int i = 0; i < length; i++) {
-            int index = (int)(table.length() * Math.random());
+            int index = random.nextInt(table.length());
             sb.append(table.charAt(index));
         }
         return sb.toString();
     }
-    public static String createCode(int partCount, int partLenght) {
+    public static String createSerialCode(int partCount, int partLenght) {
         List<String> parts = new ArrayList<>();
         for(int s = 0; s < partCount; s++) {
             parts.add(randomString(partLenght));
