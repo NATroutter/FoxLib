@@ -1,5 +1,6 @@
 package fi.natroutter.foxlib.mongo;
 
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import lombok.Getter;
@@ -34,6 +35,12 @@ public abstract class ModelController<T extends MongoData> {
     public void getCollection(Consumer<MongoCollection<T>> data) {
         getConnector().getDatabase(db-> {
             data.accept(db.getCollection(collectionName, clazz));
+        });
+    }
+
+    public void getAll(Consumer<FindIterable<T>> data) {
+        getCollection(entries->{
+            data.accept(entries.find());
         });
     }
 

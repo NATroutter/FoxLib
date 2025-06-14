@@ -15,7 +15,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Getter
 public class FoxLib {
 
-    public String Version = "1.3.2";
+    public String Version = "1.3.3";
 
     public static void print(Object message) {
         System.out.print(message.toString());
