@@ -3,6 +3,8 @@ package fi.natroutter.foxlib.logger;
 import fi.natroutter.foxlib.FoxLib;
 import fi.natroutter.foxlib.files.ReadResponse;
 import fi.natroutter.foxlib.files.WriteResponse;
+import fi.natroutter.foxlib.logger.types.ILogData;
+import fi.natroutter.foxlib.logger.types.LogLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,6 +18,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class FoxLogger {
 
@@ -188,6 +191,74 @@ public class FoxLogger {
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][WARN] " + msg);}
         console(YELLOW + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[WARN] " + msg + RESET);
     }
+
+    public void log(LogLevel level, String msg) {
+        switch (level) {
+            case INFO -> info(msg);
+            case ERROR -> error(msg);
+            case WARN -> warn(msg);
+            default -> log(msg);
+        }
+    }
+
+    //Loggers with (message and throwable)
+    public void log(String msg, Throwable throwable) {
+        log(msg + " : " + throwable.getMessage());
+    }
+    public void log(LogLevel level, String msg, Throwable throwable) {
+        log(level, msg + " : " + throwable.getMessage());
+    }
+
+    public void info(String msg, Throwable throwable) {
+        info(msg + " : " + throwable.getMessage());
+    }
+    public void error(String msg, Throwable throwable) {
+        error(msg + " : " + throwable.getMessage());
+    }
+    public void warn(String msg, Throwable throwable) {
+        warn(msg + " : " + throwable.getMessage());
+    }
+
+
+    private String getDataBlock(ILogData... data) {
+        return Arrays.stream(data).map(d->d.key() + "=\"" + d.data().toString() + "\"").collect(Collectors.joining(", "));
+    }
+
+    //Loggers with (message and data)
+    public void log(String msg, ILogData... data) {
+        log(msg + " ["+getDataBlock(data)+"]");
+    }
+    public void log(LogLevel level, String msg, ILogData... data) {
+        log(level, msg + " ["+getDataBlock(data)+"]");
+    }
+    public void info(String msg, ILogData... data) {
+        info(msg + " ["+getDataBlock(data)+"]");
+    }
+    public void error(String msg, ILogData... data) {
+        error(msg + " ["+getDataBlock(data)+"]");
+    }
+    public void warn(String msg, ILogData... data) {
+        warn(msg + " ["+getDataBlock(data)+"]");
+    }
+
+    //Loggers with (message, throwable and data)
+    public void log(String msg, Throwable throwable, ILogData... data) {
+        log(msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage());
+    }
+    public void log(String msg, LogLevel level, Throwable throwable, ILogData... data) {
+        log(level, msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage());
+    }
+    public void info(String msg, Throwable throwable, ILogData... data) {
+        info(msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage());
+    }
+    public void error(String msg, Throwable throwable, ILogData... data) {
+        error(msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage());
+    }
+    public void warn(String msg, Throwable throwable, ILogData... data) {
+        warn(msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage());
+    }
+
+
     private void console(String msg) {
         if(args.isConsoleLog()) {
             args.getPrintter().accept(msg);

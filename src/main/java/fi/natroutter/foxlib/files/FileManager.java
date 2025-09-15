@@ -24,6 +24,8 @@ public class FileManager {
         private Consumer<String> infoLogger = message -> {
             System.out.println("FileManager/Info : " + message);
         };
+        private Runnable onFolderCreation = () -> {};
+        private Runnable onFileCreation = () -> {};
         private Consumer<ReadResponse> onInitialized = file -> {};
         private Consumer<ReadResponse> onReload = file -> {};
 
@@ -104,11 +106,13 @@ public class FileManager {
 
         if (!fileFolder.exists()) {
             fileFolder.mkdirs();
+            data.onFolderCreation.run();
         }
 
         if (!file.exists() && data.isExportResource()) {
             if (exportResource(file, data.getFileName())) {
                 info(name(data.getFileName()) + " Created!");
+                data.onFileCreation.run();
             } else {
                 return;
             }
