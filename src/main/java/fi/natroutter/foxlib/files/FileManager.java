@@ -56,6 +56,14 @@ public class FileManager {
             return this;
         }
 
+        public Builder onFolderCreation(Runnable runnable) {
+            this.onFolderCreation = runnable;
+            return this;
+        }
+        public Builder onFileCreation(Runnable runnable) {
+            this.onFileCreation = runnable;
+            return this;
+        }
         public Builder onInitialized(Consumer<ReadResponse> response) {
             this.onInitialized = response;
             return this;
