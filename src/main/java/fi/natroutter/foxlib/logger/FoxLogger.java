@@ -135,11 +135,11 @@ public class FoxLogger {
     private FoxLogger(Builder builder) {
         this.args = builder;
 
-        BLUE = args.isUseColors() ? (args.isMinecraft() ? "§9" : "\u001B[36m") : "";
-        GREEN = args.isUseColors() ? (args.isMinecraft() ? "§a" : "\u001B[32m") : "";
-        RED = args.isUseColors() ? (args.isMinecraft() ? "§c" : "\u001B[31m") : "";
-        YELLOW = args.isUseColors() ? (args.isMinecraft() ? "§e" : "\u001B[33m") : "";
-        RESET = args.isUseColors() ? (args.isMinecraft() ? "§r" : "\u001B[0m") : "";
+        BLUE = args.isUseColors() ? TermColor.blue(args.isMinecraft()) : "";
+        GREEN = args.isUseColors() ? TermColor.green(args.isMinecraft()) : "";
+        RED = args.isUseColors() ? TermColor.red(args.isMinecraft()) : "";
+        YELLOW = args.isUseColors() ? TermColor.yellow(args.isMinecraft()) : "";
+        RESET = args.isUseColors() ? TermColor.reset(args.isMinecraft()) : "";
 
         if (builder.getDataFolder() != null) {
             logFolder = Paths.get(builder.getDataFolder().getAbsolutePath(), "logs").toFile();

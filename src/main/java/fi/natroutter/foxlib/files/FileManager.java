@@ -22,7 +22,7 @@ public class FileManager {
             System.out.println("FileManager/Error : " + message);
         };
         private Consumer<String> infoLogger = message -> {
-            System.out.println("FileManager/Info : " + message);
+            System.out.println("FileManager/Info : " + message); //TODO remove this loggers and just add "setLogger()" that reqires instance of foxlogger as a parameter
         };
         private Runnable onFolderCreation = () -> {};
         private Runnable onFileCreation = () -> {};
