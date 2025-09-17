@@ -72,8 +72,10 @@ public abstract class ModelController<T extends MongoData> {
             T entry = col.find(Filters.eq(idField, data.id())).first();
             if (entry == null) {
                 try {
-                    T newEntry = clazz.getDeclaredConstructor(String.class).newInstance(data.id());
-                    col.insertOne(newEntry);
+//                    T newEntry = clazz.getDeclaredConstructor(String.class).newInstance(data.id());
+//                    col.insertOne(data);
+
+                    col.insertOne(data);
                 } catch (Exception e) {
                     MongoConnector.logger.error("MongoDB Error while saving data: " + e.getMessage());
                     e.printStackTrace();
