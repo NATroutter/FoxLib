@@ -186,6 +186,11 @@ public class FoxLogger {
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][ERROR] " + msg);}
         console(RED + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[ERROR] " + msg + RESET);
     }
+    public void fatal(String msg) {
+        if (args.isUseColors()) { msg = msg.replace("\n", "\n" + RED); }
+        if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][FATAL] " + msg.toUpperCase());}
+        console("\n"+RED + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[FATAL] " + msg.toUpperCase() + RESET + "\n");
+    }
     public void warn(String msg) {
         if (args.isUseColors()) { msg = msg.replace("\n", "\n" + YELLOW); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][WARN] " + msg);}
@@ -196,6 +201,7 @@ public class FoxLogger {
         switch (level) {
             case INFO -> info(msg);
             case ERROR -> error(msg);
+            case FATAL -> fatal(msg);
             case WARN -> warn(msg);
             default -> log(msg);
         }
@@ -214,6 +220,9 @@ public class FoxLogger {
     }
     public void error(String msg, Throwable throwable) {
         error(msg + " : " + throwable.getMessage());
+    }
+    public void fatal(String msg, Throwable throwable) {
+        fatal(msg + " : " + throwable.getMessage());
     }
     public void warn(String msg, Throwable throwable) {
         warn(msg + " : " + throwable.getMessage());
@@ -237,6 +246,9 @@ public class FoxLogger {
     public void error(String msg, ILogData... data) {
         error(msg + " ["+getDataBlock(data)+"]");
     }
+    public void fatal(String msg, ILogData... data) {
+        fatal(msg + " ["+getDataBlock(data)+"]");
+    }
     public void warn(String msg, ILogData... data) {
         warn(msg + " ["+getDataBlock(data)+"]");
     }
@@ -253,6 +265,9 @@ public class FoxLogger {
     }
     public void error(String msg, Throwable throwable, ILogData... data) {
         error(msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage());
+    }
+    public void fatal(String msg, Throwable throwable, ILogData... data) {
+        fatal(msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage());
     }
     public void warn(String msg, Throwable throwable, ILogData... data) {
         warn(msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage());
