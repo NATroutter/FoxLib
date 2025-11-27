@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 
 public class MultiFileManager {
 
-    @Getter @AllArgsConstructor @NoArgsConstructor
+    @Getter @AllArgsConstructor
     public static class Builder {
         private List<String> fileNames;
         private boolean exportResource = true;
