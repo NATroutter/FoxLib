@@ -1,6 +1,7 @@
 package fi.natroutter.foxlib.files;
 
 import fi.natroutter.foxlib.FoxLib;
+import fi.natroutter.foxlib.logger.FoxLogger;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,26 +17,21 @@ public class DirectoryManager {
     @Getter @AllArgsConstructor @NoArgsConstructor
     public static class Builder {
         private File directory = null;
-        private String subDirectory = null;
         private List<String> allowedExtensions = new ArrayList<>();
-        private Consumer<String> errorLogger = message -> {
-            System.out.println("DirectoryManager/Error : " + message);
-        };
-        private Consumer<String> infoLogger = message -> {
-            System.out.println("DirectoryManager/Info : " + message);
-        };
+        private FoxLogger logger = new FoxLogger.Builder()
+                .setDebug(false)
+                .setPruneOlderThanDays(35)
+                .setSaveIntervalSeconds(300)
+                .setLoggerName("DirectoryManager")
+                .build();
         private Consumer<File> onInitialized = file -> {};
 
-        public Builder setDirectory(File directory) {
+        public Builder(File directory) {
             this.directory = directory;
-            return this;
         }
+
         public Builder setAllowedExtensions(List<String> allowedExtensions) {
             this.allowedExtensions = allowedExtensions;
-            return this;
-        }
-        public Builder setSubDirectory(String subDirectory) {
-            this.subDirectory = subDirectory;
             return this;
         }
 
@@ -44,26 +40,9 @@ public class DirectoryManager {
             return this;
         }
 
-        public Builder onErrorLog(Consumer<String> message) {
-            this.errorLogger = message;
-            return this;
-        }
-
-        public Builder onInfoLog(Consumer<String> message) {
-            this.infoLogger = message;
-            return this;
-        }
-
         public DirectoryManager build() {
             return new DirectoryManager(this);
         }
-    }
-
-    private void info(Object message) {
-        data.getInfoLogger().accept(message.toString());
-    }
-    private void error(Object message) {
-        data.getErrorLogger().accept(message.toString());
     }
 
     private final Builder data;
@@ -73,10 +52,19 @@ public class DirectoryManager {
     private DirectoryManager(Builder builder) {
         this.data = builder;
 
-        if (builder.getDirectory() != null) {
-            directory = Path.of(builder.getDirectory().toString(), data.getSubDirectory()).toFile();
-        } else {
-            directory = Path.of(System.getProperty("user.dir"), data.getSubDirectory()).toFile();
+        if (builder.getDirectory() == null) {
+            data.logger.warn("Directory is not set properly using project root dir");
+            directory = new File(System.getProperty("user.dir"));
+        }
+
+        if (!builder.getDirectory().isDirectory()) {
+            data.logger.error("Selected directory path is not a valid directory!");
+            return;
+        }
+
+        if (directory == null) {
+            data.logger.error("Failed to load any directories!");
+            return;
         }
 
         if (!directory.exists()) {
@@ -90,7 +78,7 @@ public class DirectoryManager {
 
         File[] fileArray = directory.listFiles();
         if (fileArray == null) {
-            error("Invalid Directory!");
+            data.logger.error("Invalid Directory!");
             return;
         }
 
@@ -104,17 +92,22 @@ public class DirectoryManager {
                     }
                 }
 
+                String logName = "@";
+                File parentFile = directory.getParentFile();
+                if (parentFile != null && parentFile.isDirectory()) {
+                    logName = parentFile.getName() + "/@";
+                }
+
                 new FileManager.Builder(entry.getName())
                         .setDirectory(entry.getParentFile())
                         .setExportResource(false)
-                        .onErrorLog(data.errorLogger)
-                        .onInfoLog(data.infoLogger)
-                        .setLogFileNameFormat(data.getSubDirectory()!=null ? data.getSubDirectory() +"/@" : "@")
+                        .setLogger(data.logger)
+                        .setFileNameInLogs(logName)
                         .onInitialized(file)
                         .build();
             }
         } else {
-            error("There are no files!");
+            data.logger.error("There are no files!");
         }
 
     }

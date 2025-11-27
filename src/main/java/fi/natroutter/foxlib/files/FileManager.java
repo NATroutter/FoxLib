@@ -1,6 +1,7 @@
 package fi.natroutter.foxlib.files;
 
 import fi.natroutter.foxlib.FoxLib;
+import fi.natroutter.foxlib.logger.FoxLogger;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -14,16 +15,16 @@ public class FileManager {
     @Getter @AllArgsConstructor
     public static class Builder {
         private String fileName;
-        private String logFileNameFormat = "@";
+        private String fileNameInLogs = "@";
         private boolean exportResource = true;
         private boolean loading = true;
         private File directory = null;
-        private Consumer<String> errorLogger = message -> {
-            System.out.println("FileManager/Error : " + message);
-        };
-        private Consumer<String> infoLogger = message -> {
-            System.out.println("FileManager/Info : " + message); //TODO remove this loggers and just add "setLogger()" that reqires instance of foxlogger as a parameter
-        };
+        private FoxLogger logger = new FoxLogger.Builder()
+                .setDebug(false)
+                .setPruneOlderThanDays(35)
+                .setSaveIntervalSeconds(300)
+                .setLoggerName("FileManager")
+                .build();
         private Runnable onFolderCreation = () -> {};
         private Runnable onFileCreation = () -> {};
         private Consumer<ReadResponse> onInitialized = file -> {};
@@ -33,8 +34,8 @@ public class FileManager {
             this.fileName = fileName;
         }
 
-        public Builder setLogFileNameFormat(String format) {
-            this.logFileNameFormat = format;
+        public Builder setFileNameInLogs(String format) {
+            this.fileNameInLogs = format;
             return this;
         }
 
@@ -56,6 +57,11 @@ public class FileManager {
             return this;
         }
 
+        public Builder setLogger(FoxLogger logger) {
+            this.logger = logger;
+            return this;
+        }
+
         public Builder onFolderCreation(Runnable runnable) {
             this.onFolderCreation = runnable;
             return this;
@@ -74,16 +80,6 @@ public class FileManager {
             return this;
         }
 
-        public Builder onErrorLog(Consumer<String> message) {
-            this.errorLogger = message;
-            return this;
-        }
-
-        public Builder onInfoLog(Consumer<String> message) {
-            this.infoLogger = message;
-            return this;
-        }
-
         public FileManager build() {
             return new FileManager(this);
         }
@@ -91,10 +87,9 @@ public class FileManager {
 
 
 
-    private Builder data;
+    private final Builder data;
 
-    private File file;
-    private File fileFolder;
+    private final File file;
     private String FileContent;
 
     private FileManager(Builder builder) {
@@ -110,16 +105,17 @@ public class FileManager {
             file = Path.of(System.getProperty("user.dir"), data.getFileName()).toFile();
         }
 
-        fileFolder = new File(file.getParent());
+        File fileFolder = new File(file.getParent());
 
         if (!fileFolder.exists()) {
-            fileFolder.mkdirs();
-            data.onFolderCreation.run();
+            if (fileFolder.mkdirs()) {
+                data.onFolderCreation.run();
+            }
         }
 
         if (!file.exists() && data.isExportResource()) {
             if (exportResource(file, data.getFileName())) {
-                info(name(data.getFileName()) + " Created!");
+                data.logger.info(name(data.getFileName()) + " Created!");
                 data.onFileCreation.run();
             } else {
                 return;
@@ -134,23 +130,17 @@ public class FileManager {
 
             FileContent = response.content();
             if (FileContent == null) {
-                error(name(data.getFileName()) + " Failed to Loaded!");
+                data.logger.error(name(data.getFileName()) + " Failed to Loaded!");
                 return;
             }
-            info(name(data.getFileName()) + " Loaded!");
+            data.logger.info(name(data.getFileName()) + " Loaded!");
         } else {
             data.getOnInitialized().accept(null);
         }
     }
 
     private String name(Object name) {
-        return data.getLogFileNameFormat().replace("@", name.toString());
-    }
-    private void info(Object message) {
-        data.getInfoLogger().accept(message.toString());
-    }
-    private void error(Object message) {
-        data.getErrorLogger().accept(message.toString());
+        return data.getFileNameInLogs().replace("@", name.toString());
     }
 
     public void reload() {
@@ -159,10 +149,10 @@ public class FileManager {
 
         FileContent = response.content();
         if (FileContent == null) {
-            error(name(data.getFileName()) + " Failed to Loaded!");
+            data.logger.error(name(data.getFileName()) + " Failed to Loaded!");
             return;
         }
-       info(name(data.getFileName()) + " Loaded!");
+        data.logger.info(name(data.getFileName()) + " Loaded!");
     }
 
     public String get() { return FileContent; }
@@ -175,7 +165,7 @@ public class FileManager {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         try(InputStream stream = classLoader.getResourceAsStream(resourceName)) {
             if(stream == null) {
-                error("Failed to export resource ("+resourceName+") : File doesn't exist");
+                data.logger.error("Failed to export resource ("+resourceName+") : File doesn't exist");
                 return false;
             }
             try(OutputStream resStreamOut = new FileOutputStream(file)) {
@@ -186,10 +176,10 @@ public class FileManager {
                 }
                 return true;
             } catch (Exception ex) {
-                error("Failed to export resource ("+resourceName+") : " + ex.getCause().getMessage());
+                data.logger.error("Failed to export resource ("+resourceName+") : " + ex.getCause().getMessage());
             }
         } catch (Exception ex) {
-            error("Failed to export resource ("+resourceName+") : " + ex.getCause().getMessage());
+            data.logger.error("Failed to export resource ("+resourceName+") : " + ex.getCause().getMessage());
         }
         return false;
     }
