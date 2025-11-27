@@ -39,8 +39,8 @@ public class ConfigProvider<T> {
 
         public ConfigProvider<V> build(Class<V> clazz) {
              this.file = new FileManager.Builder(this.name+".yaml")
-                    .onErrorLog((error) -> this.logger.error(error))
-                    .onInfoLog((Info)-> this.logger.info(Info));
+                     .setLogger(this.logger);
+
             return new ConfigProvider<>(this, clazz);
         }
     }

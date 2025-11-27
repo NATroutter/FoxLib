@@ -30,6 +30,11 @@ public class DirectoryManager {
             this.directory = directory;
         }
 
+        public Builder setLogger(FoxLogger logger) {
+            this.logger = logger;
+            return this;
+        }
+
         public Builder setAllowedExtensions(List<String> allowedExtensions) {
             this.allowedExtensions = allowedExtensions;
             return this;

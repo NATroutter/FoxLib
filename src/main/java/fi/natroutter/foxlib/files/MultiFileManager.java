@@ -1,5 +1,6 @@
 package fi.natroutter.foxlib.files;
 
+import fi.natroutter.foxlib.logger.FoxLogger;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,18 +19,23 @@ public class MultiFileManager {
         private boolean exportResource = true;
         private boolean loading = true;
         private File directory = null;
-        private Consumer<String> errorLogger = message -> {
-            System.out.println("MultiFileManager/Error : " + message);
-        };
-        private Consumer<String> infoLogger = message -> {
-            System.out.println("MultiFileManager/Info : " + message);
-        };
+        private FoxLogger logger = new FoxLogger.Builder()
+                .setDebug(false)
+                .setPruneOlderThanDays(35)
+                .setSaveIntervalSeconds(300)
+                .setLoggerName("MultiFileManager")
+                .build();
         private Consumer<List<ReadResponse>> onInitialized = file -> {};
 
-        public Builder setDirectory(File directory) {
+        public Builder(File directory) {
             this.directory = directory;
+        }
+
+        public Builder setLogger(FoxLogger logger) {
+            this.logger = logger;
             return this;
         }
+
         public Builder registerFiles(List<String> fileNames) {
             this.fileNames = fileNames;
             return this;
@@ -48,49 +54,34 @@ public class MultiFileManager {
             return this;
         }
 
-        public Builder onErrorLog(Consumer<String> message) {
-            this.errorLogger = message;
-            return this;
-        }
-
-        public Builder onInfoLog(Consumer<String> message) {
-            this.infoLogger = message;
-            return this;
-        }
-
         public MultiFileManager build() {
             return new MultiFileManager(this);
         }
     }
 
-    private void info(Object message) {
-        data.getInfoLogger().accept(message.toString());
-    }
-    private void error(Object message) {
-        data.getErrorLogger().accept(message.toString());
-    }
-
-    private final Builder data;
-
     private MultiFileManager(Builder data) {
-        this.data = data;
 
         List<ReadResponse> responses = new ArrayList<>();
 
 
+        if (data.getDirectory() == null) {
+            data.logger.warn("Directory is not set properly using project root dir");
+            data.directory = new File(System.getProperty("user.dir"));
+        }
+
+        if (!data.getDirectory().isDirectory()) {
+            data.logger.error("Selected directory path is not a valid directory!");
+            return;
+        }
+
         for(String name : data.getFileNames()) {
-            File path;
-            if (data.getDirectory() != null) {
-                path = Path.of(data.getDirectory().toString()).toFile();
-            } else {
-                path = Path.of(System.getProperty("user.dir")).toFile();
-            }
+            File path = data.getDirectory();
+
             new FileManager.Builder(name)
                 .setDirectory(path)
                 .setExportResource(data.isExportResource())
                 .setLoading(data.isLoading())
-                .onInfoLog(data.infoLogger)
-                .onErrorLog(data.errorLogger)
+                .setLogger(data.logger)
                 .onInitialized(file -> {
                     if (file != null && file.success()) {
                         responses.add(file);
