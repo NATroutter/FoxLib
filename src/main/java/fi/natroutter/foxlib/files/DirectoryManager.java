@@ -14,7 +14,7 @@ import java.util.function.Consumer;
 
 public class DirectoryManager {
 
-    @Getter @AllArgsConstructor @NoArgsConstructor
+    @Getter @AllArgsConstructor
     public static class Builder {
         private File directory = null;
         private List<String> allowedExtensions = new ArrayList<>();
