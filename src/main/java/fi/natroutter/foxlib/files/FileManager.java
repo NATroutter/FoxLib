@@ -6,7 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.io.*;
-import java.nio.file.Path;
 import java.util.function.Consumer;
 
 
@@ -14,11 +13,11 @@ public class FileManager {
 
     @Getter @AllArgsConstructor
     public static class Builder {
-        private String fileName;
+        private File file;
         private String fileNameInLogs = "@";
+        private String resourceFile = null;
         private boolean exportResource = true;
-        private boolean loading = true;
-        private File directory = null;
+        private boolean useAppDirectory = false;
         private FoxLogger logger = new FoxLogger.Builder()
                 .setDebug(false)
                 .setPruneOlderThanDays(35)
@@ -30,8 +29,8 @@ public class FileManager {
         private Consumer<ReadResponse> onInitialized = file -> {};
         private Consumer<ReadResponse> onReload = file -> {};
 
-        public Builder(String fileName) {
-            this.fileName = fileName;
+        public Builder(File file) {
+            this.file = file;
         }
 
         public Builder setFileNameInLogs(String format) {
@@ -39,17 +38,13 @@ public class FileManager {
             return this;
         }
 
-        public Builder setFileName(String fileName) {
-            this.fileName = fileName;
+        public Builder setResourceFile(String directory) {
+            this.resourceFile = directory;
             return this;
         }
 
-        public Builder setDirectory(File directory) {
-            this.directory = directory;
-            return this;
-        }
-        public Builder setLoading(boolean loading) {
-            this.loading = loading;
+        public Builder setUseAppDirectory(boolean state) {
+            this.useAppDirectory = state;
             return this;
         }
         public Builder setExportResource(boolean exportResource) {
@@ -85,27 +80,27 @@ public class FileManager {
         }
     }
 
-
-
     private final Builder data;
-
-    private final File file;
     private String FileContent;
 
     private FileManager(Builder builder) {
         this.data = builder;
 
-        if (data.getFileName().startsWith("/") || data.getFileName().startsWith("\\")) {
-            data.setFileName(data.getFileName().substring(1));
+        if (data.getFile() == null) {
+            data.logger.warn("File is not set, skipping operation.");
+            return;
         }
 
-        if (builder.getDirectory() != null) {
-            file = Path.of(builder.getDirectory().toString(), data.getFileName()).toFile();
-        } else {
-            file = Path.of(System.getProperty("user.dir"), data.getFileName()).toFile();
+        if (data.getFile().isDirectory()) {
+            data.logger.error("File not found: a directory was provided instead of a file.");
+            return;
         }
 
-        File fileFolder = new File(file.getParent());
+        if (data.isUseAppDirectory()) {
+            data.file = new File(System.getProperty("user.dir"), data.file.getPath());
+        }
+
+        File fileFolder = new File(data.file.getParent());
 
         if (!fileFolder.exists()) {
             if (fileFolder.mkdirs()) {
@@ -113,30 +108,38 @@ public class FileManager {
             }
         }
 
-        if (!file.exists() && data.isExportResource()) {
-            if (exportResource(file, data.getFileName())) {
-                data.logger.info(name(data.getFileName()) + " Created!");
-                data.onFileCreation.run();
-            } else {
+        if (!data.file.exists() && data.isExportResource()) {
+            try {
+                FoxLib.println("debug: export-> " + data.file.toString() + " | " + data.file.getName());
+
+                boolean exportResult;
+
+                if (data.resourceFile != null) {
+                    exportResult = FileUtils.exportResource(data.file, data.resourceFile);
+                } else {
+                    exportResult = FileUtils.exportResource(data.file);
+                }
+                if (exportResult) {
+                    data.logger.info(name(data.getFile().getName()) + " Created!");
+                    data.onFileCreation.run();
+                } else {return;}
+            } catch (ExportException e) {
+                data.logger.error(e.getMessage() + " | " + e.getCause());
                 return;
             }
         }
 
 
         //load file
-        if (data.isLoading()) {
-            ReadResponse response = FoxLib.readFile(file);
-            data.getOnInitialized().accept(response);
+        ReadResponse response = FileUtils.readFile(data.file);
+        data.getOnInitialized().accept(response);
 
-            FileContent = response.content();
-            if (FileContent == null) {
-                data.logger.error(name(data.getFileName()) + " Failed to Loaded!");
-                return;
-            }
-            data.logger.info(name(data.getFileName()) + " Loaded!");
-        } else {
-            data.getOnInitialized().accept(null);
+        FileContent = response.content();
+        if (FileContent == null) {
+            data.logger.error(name(data.getFile().getName()) + " Failed to Loaded!");
+            return;
         }
+        data.logger.info(name(data.getFile().getName()) + " Loaded!");
     }
 
     private String name(Object name) {
@@ -144,44 +147,21 @@ public class FileManager {
     }
 
     public void reload() {
-        ReadResponse response = FoxLib.readFile(file);
+        ReadResponse response = FileUtils.readFile(data.file);
         data.getOnReload().accept(response);
 
         FileContent = response.content();
         if (FileContent == null) {
-            data.logger.error(name(data.getFileName()) + " Failed to Loaded!");
+            data.logger.error(name(data.getFile().getName()) + " Failed to Loaded!");
             return;
         }
-        data.logger.info(name(data.getFileName()) + " Loaded!");
+        data.logger.info(name(data.getFile().getName()) + " Loaded!");
     }
 
     public String get() { return FileContent; }
 
-    public void save(String data) {
-        FoxLib.writeFile(file, data);
-    }
-
-    private boolean exportResource(File file, String resourceName) {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        try(InputStream stream = classLoader.getResourceAsStream(resourceName)) {
-            if(stream == null) {
-                data.logger.error("Failed to export resource ("+resourceName+") : File doesn't exist");
-                return false;
-            }
-            try(OutputStream resStreamOut = new FileOutputStream(file)) {
-                int readBytes;
-                byte[] buffer = new byte[4096];
-                while ((readBytes = stream.read(buffer)) > 0) {
-                    resStreamOut.write(buffer, 0, readBytes);
-                }
-                return true;
-            } catch (Exception ex) {
-                data.logger.error("Failed to export resource ("+resourceName+") : " + ex.getCause().getMessage());
-            }
-        } catch (Exception ex) {
-            data.logger.error("Failed to export resource ("+resourceName+") : " + ex.getCause().getMessage());
-        }
-        return false;
+    public void save(String content) {
+        FileUtils.writeFile(data.file, content);
     }
 
 }

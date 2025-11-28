@@ -10,19 +10,20 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 import org.yaml.snakeyaml.representer.Representer;
 
+import java.io.File;
 import java.util.function.Consumer;
 
 public class ConfigProvider<T> {
 
     public static class Builder<V> {
-        private String name = "config";
+        private String name = "config.yaml";
         private FoxLogger logger = new FoxLogger.Builder()
                 .setDebug(false)
                 .setPruneOlderThanDays(35)
                 .setSaveIntervalSeconds(300)
                 .setLoggerName("ConfigProvider")
                 .build();;
-        private FileManager.Builder file;
+        private FileManager.Builder fileManager;
 
         public Builder<V> setName(String name) {
             this.name = name;
@@ -33,13 +34,19 @@ public class ConfigProvider<T> {
             return this;
         }
         public Builder<V> setFileBuilder(FileManager.Builder builder) {
-            this.file = builder;
+            this.fileManager = builder;
             return this;
         }
 
         public ConfigProvider<V> build(Class<V> clazz) {
-             this.file = new FileManager.Builder(this.name+".yaml")
-                     .setLogger(this.logger);
+            if (!this.name.endsWith(".yaml")) {
+                this.name = this.name + ".yaml";
+            }
+            File file = new File(this.name);
+
+            this.fileManager = new FileManager.Builder(file)
+                    .setUseAppDirectory(true)
+                    .setLogger(this.logger);
 
             return new ConfigProvider<>(this, clazz);
         }
@@ -53,8 +60,8 @@ public class ConfigProvider<T> {
     private boolean initialized = false;
 
     private ConfigProvider(Builder<T> builder, Class<T> clazz) {
-        Consumer<ReadResponse> resp = builder.file.getOnInitialized();
-        builder.file.onInitialized(file -> {
+        Consumer<ReadResponse> resp = builder.fileManager.getOnInitialized();
+        builder.fileManager.onInitialized(file -> {
             if (file.success()) {
                 DumperOptions options = new DumperOptions();
                 Representer representer = new Representer(options);
@@ -68,7 +75,7 @@ public class ConfigProvider<T> {
             }
             initialized = file.success();
         });
-        builder.file.build();
+        builder.fileManager.build();
     }
 
 }

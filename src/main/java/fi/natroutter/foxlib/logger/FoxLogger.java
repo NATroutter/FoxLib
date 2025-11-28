@@ -1,6 +1,7 @@
 package fi.natroutter.foxlib.logger;
 
 import fi.natroutter.foxlib.FoxLib;
+import fi.natroutter.foxlib.files.FileUtils;
 import fi.natroutter.foxlib.files.ReadResponse;
 import fi.natroutter.foxlib.files.WriteResponse;
 import fi.natroutter.foxlib.logger.types.ILogData;
@@ -344,7 +345,7 @@ public class FoxLogger {
         }
         String oldContent = "";
         if (saveTo.exists()) {
-            ReadResponse read = FoxLib.readFile(saveTo);
+            ReadResponse read = FileUtils.readFile(saveTo);
             if (read.success()) {
                 oldContent = read.content();
             } else {
@@ -352,7 +353,7 @@ public class FoxLogger {
                 return;
             }
         }
-        WriteResponse write = FoxLib.writeFile(saveTo, oldContent + fullEntry);
+        WriteResponse write = FileUtils.writeFile(saveTo, oldContent + fullEntry);
         if (write.success()) {
             entries.clear();
             debug("Log file saved!");
