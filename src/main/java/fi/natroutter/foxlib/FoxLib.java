@@ -8,7 +8,9 @@ import lombok.Getter;
 import java.io.*;
 import java.nio.file.Path;
 import java.security.SecureRandom;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -90,6 +92,13 @@ public class FoxLib {
         } else if (os.contains("nix") || os.contains("nux")) {
             Runtime.getRuntime().exec("xdg-open " + url);
         }
+    }
+
+    public static String getTimestamp() {
+        return getTimestamp("yyyy-MM-dd-HH-mm-ss");
+    }
+    public static String getTimestamp(String format) {
+        return new SimpleDateFormat(format).format(new Date());
     }
 
 }
