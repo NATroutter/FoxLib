@@ -3,6 +3,7 @@ package fi.natroutter.foxlib;
 import fi.natroutter.foxlib.config.ConfigProvider;
 import fi.natroutter.foxlib.files.ReadResponse;
 import fi.natroutter.foxlib.files.WriteResponse;
+import fi.natroutter.foxlib.utilities.TermColor;
 import lombok.Getter;
 
 import java.io.*;
@@ -17,13 +18,13 @@ import java.util.concurrent.ThreadLocalRandom;
 @Getter
 public class FoxLib {
 
-    public String Version = "1.3.6";//
+    public String Version = "1.4.0";//
 
     public static void print(Object message) {
-        System.out.print(message.toString());
+        System.out.print(TermColor.parse(message.toString()));
     }
     public static void println(Object message) {
-        System.out.println(message.toString());
+        System.out.println(TermColor.parse(message.toString()));
     }
 
     public static boolean isBetween(long number, long min, long max) {

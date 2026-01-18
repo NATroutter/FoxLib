@@ -1,11 +1,11 @@
 package fi.natroutter.foxlib.logger;
 
-import fi.natroutter.foxlib.FoxLib;
 import fi.natroutter.foxlib.files.FileUtils;
 import fi.natroutter.foxlib.files.ReadResponse;
 import fi.natroutter.foxlib.files.WriteResponse;
 import fi.natroutter.foxlib.logger.types.ILogData;
 import fi.natroutter.foxlib.logger.types.LogLevel;
+import fi.natroutter.foxlib.utilities.TermColor;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,7 +37,6 @@ public class FoxLogger {
         private String logNameSuffix = "Log";
         private LogDateFormat logDateFormat = LogDateFormat.MONTH_DAY_YEAR;
         private boolean useColors = true;
-        private boolean isMinecraft = false;
         private boolean useTimeStamp = true;
         private String loggerName = "FoxLogger";
         private Consumer<String> printter = System.out::println;
@@ -71,11 +70,6 @@ public class FoxLogger {
         }
         public Builder setPrintter(Consumer<String> printter) {
             this.printter = printter;
-            return this;
-        }
-
-        public Builder setIsMinecraft(boolean isMinecraft) {
-            this.isMinecraft = isMinecraft;
             return this;
         }
 
@@ -127,20 +121,9 @@ public class FoxLogger {
 
     private Builder args;
 
-    private final String BLUE;
-    private final String GREEN;
-    private final String RED;
-    private final String YELLOW;
-    private final String RESET;
 
     private FoxLogger(Builder builder) {
         this.args = builder;
-
-        BLUE = args.isUseColors() ? TermColor.blue(args.isMinecraft()) : "";
-        GREEN = args.isUseColors() ? TermColor.green(args.isMinecraft()) : "";
-        RED = args.isUseColors() ? TermColor.red(args.isMinecraft()) : "";
-        YELLOW = args.isUseColors() ? TermColor.yellow(args.isMinecraft()) : "";
-        RESET = args.isUseColors() ? TermColor.reset(args.isMinecraft()) : "";
 
         if (builder.getDataFolder() != null) {
             logFolder = Paths.get(builder.getDataFolder().getAbsolutePath(), "logs").toFile();
@@ -173,29 +156,29 @@ public class FoxLogger {
     }
 
     public void log(String msg) {
-        if (args.isUseColors()) { msg = msg.replace("\n", "\n" + BLUE); }
+        if (args.isUseColors()) { msg = msg.replace("\n", "\n{BLUE}"); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][LOG] " + msg);}
-        console(BLUE + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + msg + RESET);
+        console("{BLUE}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + msg + "{RESET}");
     }
     public void info(String msg) {
-        if (args.isUseColors()) { msg = msg.replace("\n", "\n" + GREEN); }
+        if (args.isUseColors()) { msg = msg.replace("\n", "\n{GREEN}"); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][INFO] " + msg);}
-        console(GREEN + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[INFO] " + msg + RESET);
+        console("{GREEN}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[INFO] " + msg + "{RESET}");
     }
     public void error(String msg) {
-        if (args.isUseColors()) { msg = msg.replace("\n", "\n" + RED); }
+        if (args.isUseColors()) { msg = msg.replace("\n", "\n{RED}"); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][ERROR] " + msg);}
-        console(RED + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[ERROR] " + msg + RESET);
+        console("{RED}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[ERROR] " + msg + "{RESET}");
     }
     public void fatal(String msg) {
-        if (args.isUseColors()) { msg = msg.replace("\n", "\n" + RED); }
+        if (args.isUseColors()) { msg = msg.replace("\n", "\n{RED}"); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][FATAL] " + msg.toUpperCase());}
-        console("\n"+RED + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[FATAL] " + msg.toUpperCase() + RESET + "\n");
+        console("\n{RED}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[FATAL] " + msg.toUpperCase() + "{RESET}\n");
     }
     public void warn(String msg) {
-        if (args.isUseColors()) { msg = msg.replace("\n", "\n" + YELLOW); }
+        if (args.isUseColors()) { msg = msg.replace("\n", "\n{YELLOW}"); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][WARN] " + msg);}
-        console(YELLOW + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[WARN] " + msg + RESET);
+        console("{YELLOW}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[WARN] " + msg + "{RESET}");
     }
 
     public void log(LogLevel level, String msg) {
@@ -277,14 +260,14 @@ public class FoxLogger {
 
     private void console(String msg) {
         if(args.isConsoleLog()) {
-            args.getPrintter().accept(msg);
+            args.getPrintter().accept(TermColor.parse(args.isUseColors(), msg));
         }
     }
     private void debug(String msg) {
         if(args.isDebug()) {
-            if (args.isUseColors()) { msg = msg.replace("\n", "\n" + BLUE); }
+            if (args.isUseColors()) { msg = msg.replace("\n", "\n{BLUE}"); }
             if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][DEBUG] " + msg);}
-            console(BLUE + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + msg + RESET);
+            console("{BLUE}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + msg + "{RESET}");
         }
     }
     private String timeStamp() {
