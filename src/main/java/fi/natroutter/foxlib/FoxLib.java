@@ -11,9 +11,11 @@ import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 @Getter
 public class FoxLib {
@@ -25,6 +27,13 @@ public class FoxLib {
     }
     public static void println(Object message) {
         System.out.println(TermColor.parse(message.toString()));
+    }
+    public static void printmln(Object... lines) {
+        String message = Arrays.stream(lines)
+                .map(Object::toString)
+                .map(TermColor::parse)
+                .collect(Collectors.joining("\n"));
+        System.out.println(message);
     }
 
     public static boolean isBetween(long number, long min, long max) {
