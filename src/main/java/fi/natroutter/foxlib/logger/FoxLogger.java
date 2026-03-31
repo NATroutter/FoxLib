@@ -18,6 +18,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -40,6 +41,7 @@ public class FoxLogger {
         private boolean useTimeStamp = true;
         private String loggerName = "FoxLogger";
         private Consumer<String> printter = System.out::println;
+        private BiConsumer<LogLevel, String> onEntry = null;
 
         public Builder setLoggerName(String loggerName) {
             this.loggerName = loggerName;
@@ -70,6 +72,16 @@ public class FoxLogger {
         }
         public Builder setPrintter(Consumer<String> printter) {
             this.printter = printter;
+            return this;
+        }
+
+        /**
+         * Registers a callback invoked for every log entry before color processing.
+         * The first argument is the {@link LogLevel}, the second is the formatted message
+         * {@code [timestamp][loggerName][LEVEL] text} with clean (non-colored) content.
+         */
+        public Builder setOnEntry(BiConsumer<LogLevel, String> onEntry) {
+            this.onEntry = onEntry;
             return this;
         }
 
@@ -120,10 +132,12 @@ public class FoxLogger {
     private File logFolder;
 
     private Builder args;
+    private final BiConsumer<LogLevel, String> onEntry;
 
 
     private FoxLogger(Builder builder) {
         this.args = builder;
+        this.onEntry = builder.onEntry;
 
         if (builder.getDataFolder() != null) {
             logFolder = Paths.get(builder.getDataFolder().getAbsolutePath(), "logs").toFile();
@@ -156,26 +170,31 @@ public class FoxLogger {
     }
 
     public void log(String msg) {
+        if (onEntry != null) onEntry.accept(LogLevel.LOG,   "["+timeStamp()+"]["+args.loggerName+"] " + msg);
         if (args.isUseColors()) { msg = msg.replace("\n", "\n{BLUE}"); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][LOG] " + msg);}
         console("{BLUE}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + msg + "{RESET}");
     }
     public void info(String msg) {
+        if (onEntry != null) onEntry.accept(LogLevel.INFO,  "["+timeStamp()+"]["+args.loggerName+"][INFO] " + msg);
         if (args.isUseColors()) { msg = msg.replace("\n", "\n{GREEN}"); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][INFO] " + msg);}
         console("{GREEN}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[INFO] " + msg + "{RESET}");
     }
     public void error(String msg) {
+        if (onEntry != null) onEntry.accept(LogLevel.ERROR, "["+timeStamp()+"]["+args.loggerName+"][ERROR] " + msg);
         if (args.isUseColors()) { msg = msg.replace("\n", "\n{RED}"); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][ERROR] " + msg);}
         console("{RED}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[ERROR] " + msg + "{RESET}");
     }
     public void fatal(String msg) {
+        if (onEntry != null) onEntry.accept(LogLevel.FATAL, "["+timeStamp()+"]["+args.loggerName+"][FATAL] " + msg.toUpperCase());
         if (args.isUseColors()) { msg = msg.replace("\n", "\n{RED}"); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][FATAL] " + msg.toUpperCase());}
         console("\n{RED}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[FATAL] " + msg.toUpperCase() + "{RESET}\n");
     }
     public void warn(String msg) {
+        if (onEntry != null) onEntry.accept(LogLevel.WARN,  "["+timeStamp()+"]["+args.loggerName+"][WARN] " + msg);
         if (args.isUseColors()) { msg = msg.replace("\n", "\n{YELLOW}"); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][WARN] " + msg);}
         console("{YELLOW}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[WARN] " + msg + "{RESET}");

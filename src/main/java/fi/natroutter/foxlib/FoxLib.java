@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @Getter
 public class FoxLib {
 
-    public String Version = "1.4.0";//
+    public String Version = "1.4.2";//
 
     public static void print(Object message) {
         System.out.print(TermColor.parse(message.toString()));
