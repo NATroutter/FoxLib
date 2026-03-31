@@ -169,66 +169,82 @@ public class FoxLogger {
         prune();
     }
 
-    public void log(String msg) {
+    public void log(String msg) { log(msg, false); }
+    public void log(String msg, boolean silent) {
         if (onEntry != null) onEntry.accept(LogLevel.LOG,   "["+timeStamp()+"]["+args.loggerName+"] " + msg);
         if (args.isUseColors()) { msg = msg.replace("\n", "\n{BLUE}"); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][LOG] " + msg);}
-        console("{BLUE}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + msg + "{RESET}");
+        if (!silent) console("{BLUE}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + msg + "{RESET}");
     }
-    public void info(String msg) {
+
+    public void info(String msg) { info(msg, false); }
+    public void info(String msg, boolean silent) {
         if (onEntry != null) onEntry.accept(LogLevel.INFO,  "["+timeStamp()+"]["+args.loggerName+"][INFO] " + msg);
         if (args.isUseColors()) { msg = msg.replace("\n", "\n{GREEN}"); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][INFO] " + msg);}
-        console("{GREEN}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[INFO] " + msg + "{RESET}");
+        if (!silent) console("{GREEN}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[INFO] " + msg + "{RESET}");
     }
-    public void error(String msg) {
+
+    public void error(String msg) { error(msg, false); }
+    public void error(String msg, boolean silent) {
         if (onEntry != null) onEntry.accept(LogLevel.ERROR, "["+timeStamp()+"]["+args.loggerName+"][ERROR] " + msg);
         if (args.isUseColors()) { msg = msg.replace("\n", "\n{RED}"); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][ERROR] " + msg);}
-        console("{RED}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[ERROR] " + msg + "{RESET}");
+        if (!silent) console("{RED}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[ERROR] " + msg + "{RESET}");
     }
-    public void fatal(String msg) {
+
+    public void fatal(String msg) { fatal(msg, false); }
+    public void fatal(String msg, boolean silent) {
         if (onEntry != null) onEntry.accept(LogLevel.FATAL, "["+timeStamp()+"]["+args.loggerName+"][FATAL] " + msg.toUpperCase());
         if (args.isUseColors()) { msg = msg.replace("\n", "\n{RED}"); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][FATAL] " + msg.toUpperCase());}
-        console("\n{RED}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[FATAL] " + msg.toUpperCase() + "{RESET}\n");
+        if (!silent) console("\n{RED}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[FATAL] " + msg.toUpperCase() + "{RESET}\n");
     }
-    public void warn(String msg) {
+
+    public void warn(String msg) { warn(msg, false); }
+    public void warn(String msg, boolean silent) {
         if (onEntry != null) onEntry.accept(LogLevel.WARN,  "["+timeStamp()+"]["+args.loggerName+"][WARN] " + msg);
         if (args.isUseColors()) { msg = msg.replace("\n", "\n{YELLOW}"); }
         if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][WARN] " + msg);}
-        console("{YELLOW}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[WARN] " + msg + "{RESET}");
+        if (!silent) console("{YELLOW}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[WARN] " + msg + "{RESET}");
     }
 
-    public void log(LogLevel level, String msg) {
+    public void log(LogLevel level, String msg) { log(level, msg, false); }
+    public void log(LogLevel level, String msg, boolean silent) {
         switch (level) {
-            case INFO -> info(msg);
-            case ERROR -> error(msg);
-            case FATAL -> fatal(msg);
-            case WARN -> warn(msg);
-            default -> log(msg);
+            case INFO -> info(msg, silent);
+            case ERROR -> error(msg, silent);
+            case FATAL -> fatal(msg, silent);
+            case WARN -> warn(msg, silent);
+            default -> log(msg, silent);
         }
     }
 
     //Loggers with (message and throwable)
-    public void log(String msg, Throwable throwable) {
-        log(msg + " : " + throwable.getMessage());
+    public void log(String msg, Throwable throwable) { log(msg, throwable, false); }
+    public void log(String msg, Throwable throwable, boolean silent) {
+        log(msg + " : " + throwable.getMessage(), silent);
     }
-    public void log(LogLevel level, String msg, Throwable throwable) {
-        log(level, msg + " : " + throwable.getMessage());
+    public void log(LogLevel level, String msg, Throwable throwable) { log(level, msg, throwable, false); }
+    public void log(LogLevel level, String msg, Throwable throwable, boolean silent) {
+        log(level, msg + " : " + throwable.getMessage(), silent);
     }
 
-    public void info(String msg, Throwable throwable) {
-        info(msg + " : " + throwable.getMessage());
+    public void info(String msg, Throwable throwable) { info(msg, throwable, false); }
+    public void info(String msg, Throwable throwable, boolean silent) {
+        info(msg + " : " + throwable.getMessage(), silent);
     }
-    public void error(String msg, Throwable throwable) {
-        error(msg + " : " + throwable.getMessage());
+    public void error(String msg, Throwable throwable) { error(msg, throwable, false); }
+    public void error(String msg, Throwable throwable, boolean silent) {
+        error(msg + " : " + throwable.getMessage(), silent);
     }
-    public void fatal(String msg, Throwable throwable) {
-        fatal(msg + " : " + throwable.getMessage());
+    public void fatal(String msg, Throwable throwable) { fatal(msg, throwable, false); }
+    public void fatal(String msg, Throwable throwable, boolean silent) {
+        fatal(msg + " : " + throwable.getMessage(), silent);
     }
-    public void warn(String msg, Throwable throwable) {
-        warn(msg + " : " + throwable.getMessage());
+    public void warn(String msg, Throwable throwable) { warn(msg, throwable, false); }
+    public void warn(String msg, Throwable throwable, boolean silent) {
+        warn(msg + " : " + throwable.getMessage(), silent);
     }
 
 
@@ -237,43 +253,55 @@ public class FoxLogger {
     }
 
     //Loggers with (message and data)
-    public void log(String msg, ILogData... data) {
-        log(msg + " ["+getDataBlock(data)+"]");
+    public void log(String msg, ILogData... data) { log(msg, false, data); }
+    public void log(String msg, boolean silent, ILogData... data) {
+        log(msg + " ["+getDataBlock(data)+"]", silent);
     }
-    public void log(LogLevel level, String msg, ILogData... data) {
-        log(level, msg + " ["+getDataBlock(data)+"]");
+    public void log(LogLevel level, String msg, ILogData... data) { log(level, msg, false, data); }
+    public void log(LogLevel level, String msg, boolean silent, ILogData... data) {
+        log(level, msg + " ["+getDataBlock(data)+"]", silent);
     }
-    public void info(String msg, ILogData... data) {
-        info(msg + " ["+getDataBlock(data)+"]");
+    public void info(String msg, ILogData... data) { info(msg, false, data); }
+    public void info(String msg, boolean silent, ILogData... data) {
+        info(msg + " ["+getDataBlock(data)+"]", silent);
     }
-    public void error(String msg, ILogData... data) {
-        error(msg + " ["+getDataBlock(data)+"]");
+    public void error(String msg, ILogData... data) { error(msg, false, data); }
+    public void error(String msg, boolean silent, ILogData... data) {
+        error(msg + " ["+getDataBlock(data)+"]", silent);
     }
-    public void fatal(String msg, ILogData... data) {
-        fatal(msg + " ["+getDataBlock(data)+"]");
+    public void fatal(String msg, ILogData... data) { fatal(msg, false, data); }
+    public void fatal(String msg, boolean silent, ILogData... data) {
+        fatal(msg + " ["+getDataBlock(data)+"]", silent);
     }
-    public void warn(String msg, ILogData... data) {
-        warn(msg + " ["+getDataBlock(data)+"]");
+    public void warn(String msg, ILogData... data) { warn(msg, false, data); }
+    public void warn(String msg, boolean silent, ILogData... data) {
+        warn(msg + " ["+getDataBlock(data)+"]", silent);
     }
 
     //Loggers with (message, throwable and data)
-    public void log(String msg, Throwable throwable, ILogData... data) {
-        log(msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage());
+    public void log(String msg, Throwable throwable, ILogData... data) { log(msg, throwable, false, data); }
+    public void log(String msg, Throwable throwable, boolean silent, ILogData... data) {
+        log(msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage(), silent);
     }
-    public void log(String msg, LogLevel level, Throwable throwable, ILogData... data) {
-        log(level, msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage());
+    public void log(String msg, LogLevel level, Throwable throwable, ILogData... data) { log(msg, level, throwable, false, data); }
+    public void log(String msg, LogLevel level, Throwable throwable, boolean silent, ILogData... data) {
+        log(level, msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage(), silent);
     }
-    public void info(String msg, Throwable throwable, ILogData... data) {
-        info(msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage());
+    public void info(String msg, Throwable throwable, ILogData... data) { info(msg, throwable, false, data); }
+    public void info(String msg, Throwable throwable, boolean silent, ILogData... data) {
+        info(msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage(), silent);
     }
-    public void error(String msg, Throwable throwable, ILogData... data) {
-        error(msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage());
+    public void error(String msg, Throwable throwable, ILogData... data) { error(msg, throwable, false, data); }
+    public void error(String msg, Throwable throwable, boolean silent, ILogData... data) {
+        error(msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage(), silent);
     }
-    public void fatal(String msg, Throwable throwable, ILogData... data) {
-        fatal(msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage());
+    public void fatal(String msg, Throwable throwable, ILogData... data) { fatal(msg, throwable, false, data); }
+    public void fatal(String msg, Throwable throwable, boolean silent, ILogData... data) {
+        fatal(msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage(), silent);
     }
-    public void warn(String msg, Throwable throwable, ILogData... data) {
-        warn(msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage());
+    public void warn(String msg, Throwable throwable, ILogData... data) { warn(msg, throwable, false, data); }
+    public void warn(String msg, Throwable throwable, boolean silent, ILogData... data) {
+        warn(msg + " ["+getDataBlock(data)+"] : " + throwable.getMessage(), silent);
     }
 
 
