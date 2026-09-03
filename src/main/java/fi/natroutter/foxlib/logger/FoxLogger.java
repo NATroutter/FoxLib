@@ -12,11 +12,12 @@ import lombok.NoArgsConstructor;
 
 import java.io.File;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -330,27 +331,50 @@ public class FoxLogger {
             return;
         }
 
+        if (args.getPruneOlderThanDays() <= 0) {
+            return;
+        }
+
+        // The same order save() wrote the name in. Reading it back with a fixed day-month-year
+        // pattern, as this used to, turned the default month-day-year name "Log_9-3-2026.log"
+        // (3 September) into 9 March, which is older than any retention window — so the file was
+        // deleted the moment it was written, every save, on every day whose month fits in a day.
+        DateTimeFormatter nameFormat = switch (args.getLogDateFormat()) {
+            case MONTH_DAY_YEAR -> DateTimeFormatter.ofPattern("M-d-yyyy");
+            case DAY_MONTH_YEAR -> DateTimeFormatter.ofPattern("d-M-yyyy");
+        };
+        // The clock save() names files by, so a file written today is never "older" than today.
+        LocalDate cutoff = LocalDate.now().minusDays(args.getPruneOlderThanDays());
+
         int pruneCount = 0;
-        try {
-            for (File file : logFolder.listFiles()) {
-                if (file.isDirectory()) {continue;}
-                if (!file.getName().endsWith(".log")) {continue;}
+        File[] files = logFolder.listFiles();
+        if (files == null) {
+            return;
+        }
+        for (File file : files) {
+            if (file.isDirectory()) {continue;}
+            if (!file.getName().endsWith(".log")) {continue;}
 
-                String fileName = file.getName();
-                String filenameNoExt = fileName.substring(0, fileName.length() - 4);
-                String dateString = filenameNoExt.split("_")[1];
+            String fileName = file.getName();
+            String filenameNoExt = fileName.substring(0, fileName.length() - 4);
+            String[] parts = filenameNoExt.split("_");
+            if (parts.length < 2) {continue;}
 
-                Date date = new SimpleDateFormat("dd-MM-yyyy").parse(dateString);
-                ZonedDateTime Ago = ZonedDateTime.now().plusDays(-args.getPruneOlderThanDays());
-                if (date.toInstant().isBefore(Ago.toInstant())) {
-                    file.delete();
+            // Per file, so one name this logger did not write — or wrote under another date
+            // format — is left alone rather than stopping the sweep for every file after it.
+            LocalDate date;
+            try {
+                date = LocalDate.parse(parts[parts.length - 1], nameFormat);
+            } catch (DateTimeParseException e) {
+                continue;
+            }
+
+            if (date.isBefore(cutoff)) {
+                if (file.delete()) {
                     pruneCount++;
                     debug("File deleted : " + file.getName());
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return;
         }
         debug("Pruned "+pruneCount+" old log files!");
     }
