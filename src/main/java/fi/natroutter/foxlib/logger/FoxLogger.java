@@ -478,7 +478,7 @@ public class FoxLogger {
         return last;
     }
 
-    private void save() {
+    private synchronized void save() {
         List<String> pending;
         synchronized (entries) {
             if (entries.isEmpty()) {
