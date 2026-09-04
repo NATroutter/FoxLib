@@ -142,6 +142,16 @@ public class FoxLogger {
     private final List<String> entries = new ArrayList<>();
     private File logFolder;
 
+    /**
+     * Largest a single log file grows before the next save starts a new one.
+     *
+     * <p>Age was the only bound, which is the wrong one on its own: a link flapping once a
+     * second produces a hundred thousand lines a day, and a volume fills long before anything
+     * in it is thirty-five days old. Rolled rather than truncated, so nothing already written
+     * is lost.
+     */
+    private static final long MAX_LOG_BYTES = 32L * 1024 * 1024;
+
     /** Runs the periodic save and prune. Null when saving is off. */
     private ScheduledExecutorService saver;
 
@@ -414,11 +424,18 @@ public class FoxLogger {
             String[] parts = filenameNoExt.split("_");
             if (parts.length < 2) {continue;}
 
+            // A rolled part is "9-4-2026.2"; the date is what precedes the first dot.
+            String datePart = parts[parts.length - 1];
+            int dot = datePart.indexOf('.');
+            if (dot >= 0) {
+                datePart = datePart.substring(0, dot);
+            }
+
             // Per file, so one name this logger did not write — or wrote under another date
             // format — is left alone rather than stopping the sweep for every file after it.
             LocalDate date;
             try {
-                date = LocalDate.parse(parts[parts.length - 1], nameFormat);
+                date = LocalDate.parse(datePart, nameFormat);
             } catch (DateTimeParseException e) {
                 continue;
             }
@@ -431,6 +448,26 @@ public class FoxLogger {
             }
         }
         debug("Pruned "+pruneCount+" old log files!");
+    }
+
+    /**
+     * Returns the file to write to, which is the next numbered part when the current one is full.
+     *
+     * @param base today's log file
+     * @return {@code base}, or {@code Log_9-4-2026.2.log} and so on once it is over the cap
+     */
+    private File rolled(File base) {
+        if (!base.exists() || base.length() < MAX_LOG_BYTES) {
+            return base;
+        }
+        String name = base.getName().substring(0, base.getName().length() - 4);
+        for (int part = 2; part < 1000; part++) {
+            File candidate = new File(logFolder, name + "." + part + ".log");
+            if (!candidate.exists() || candidate.length() < MAX_LOG_BYTES) {
+                return candidate;
+            }
+        }
+        return base;
     }
 
     private void save() {
@@ -455,6 +492,7 @@ public class FoxLogger {
         }
 
         File saveTo = new File(logFolder, fileName);
+        saveTo = rolled(saveTo);
 
         StringBuilder fullEntry = new StringBuilder();
         for (String entry : pending) {

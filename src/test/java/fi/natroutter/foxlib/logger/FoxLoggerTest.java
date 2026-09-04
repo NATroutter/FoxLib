@@ -181,6 +181,24 @@ class FoxLoggerTest {
     }
 
     @Test
+    void rollsToANewFileRatherThanGrowingWithoutABound() throws Exception {
+        // Age was the only bound. A link flapping once a second fills a volume long before
+        // anything in it is old enough to prune.
+        FoxLogger logger = logger(3600);
+        Files.createDirectories(directory.resolve("logs"));
+        Files.write(todaysLog(), new byte[33 * 1024 * 1024]);
+
+        logger.info("after the cap");
+        logger.close();
+
+        ZonedDateTime now = ZonedDateTime.now();
+        Path second = directory.resolve("logs").resolve(
+                "Log_" + now.getMonthValue() + "-" + now.getDayOfMonth() + "-" + now.getYear() + ".2.log");
+        assertTrue(Files.exists(second), "no second part was started");
+        assertTrue(Files.readString(second).contains("after the cap"));
+    }
+
+    @Test
     void timestampsInTheConfiguredZone() {
         // `timeStamp()` computed `formatter.withZone(zone)` and threw the result away, because
         // DateTimeFormatter is immutable, then formatted LocalDateTime.now() in the system zone.
