@@ -158,11 +158,14 @@ public class FileUtils {
             String path = file.getAbsolutePath();
 
             if (os.contains("win")) {
-                Runtime.getRuntime().exec("explorer.exe /select," + path);
+                // An array, not a string. A single-string exec is split on whitespace, so a
+                // path with a space in it becomes several arguments, and anything a caller can
+                // put in the path becomes part of the command line.
+                Runtime.getRuntime().exec(new String[] {"explorer.exe", "/select," + path});
             } else if (os.contains("mac")) {
-                Runtime.getRuntime().exec("open " + path);
+                Runtime.getRuntime().exec(new String[] {"open", path});
             } else if (os.contains("nix") || os.contains("nux")) {
-                Runtime.getRuntime().exec("xdg-open " + path);
+                Runtime.getRuntime().exec(new String[] {"xdg-open", path});
             }
         }
     }

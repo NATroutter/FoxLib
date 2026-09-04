@@ -95,12 +95,14 @@ public class FoxLib {
 
     public static void openURL(String url) throws IOException {
         String os = System.getProperty("os.name").toLowerCase();
+        // An array for the same reason openFileExplorer uses one: a URL is caller-supplied text
+        // and a single-string exec would let its spaces decide where arguments begin.
         if (os.contains("win")) {
-            Runtime.getRuntime().exec("rundll32 url.dll,FileProtocolHandler " + url);
+            Runtime.getRuntime().exec(new String[] {"rundll32", "url.dll,FileProtocolHandler", url});
         } else if (os.contains("mac")) {
-            Runtime.getRuntime().exec("open " + url);
+            Runtime.getRuntime().exec(new String[] {"open", url});
         } else if (os.contains("nix") || os.contains("nux")) {
-            Runtime.getRuntime().exec("xdg-open " + url);
+            Runtime.getRuntime().exec(new String[] {"xdg-open", url});
         }
     }
 
