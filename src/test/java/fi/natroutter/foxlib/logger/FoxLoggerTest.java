@@ -199,6 +199,28 @@ class FoxLoggerTest {
     }
 
     @Test
+    void prunesOldFilesIncludingARolledPart() throws Exception {
+        // A rolled part is named "Log_1-1-2020.2.log" - the date precedes the first dot, not
+        // the whole name before ".log". Before prune() learned to strip that dot, the part
+        // never parsed as a date at all, so it fell into the "leave it alone" branch and was
+        // never pruned, no matter how old it was.
+        Path logs = directory.resolve("logs");
+        Files.createDirectories(logs);
+        Path oldFile = logs.resolve("Log_1-1-2020.log");
+        Path oldRolledPart = logs.resolve("Log_1-1-2020.2.log");
+        Files.writeString(oldFile, "old");
+        Files.writeString(oldRolledPart, "old rolled part");
+
+        FoxLogger logger = logger(3600);
+        logger.info("today's line");
+        logger.close();
+
+        assertTrue(Files.notExists(oldFile), "an old dated file was not pruned");
+        assertTrue(Files.notExists(oldRolledPart), "an old rolled part was not pruned");
+        assertTrue(Files.exists(todaysLog()), "today's file was pruned along with the old ones");
+    }
+
+    @Test
     void timestampsInTheConfiguredZone() {
         // `timeStamp()` computed `formatter.withZone(zone)` and threw the result away, because
         // DateTimeFormatter is immutable, then formatted LocalDateTime.now() in the system zone.
