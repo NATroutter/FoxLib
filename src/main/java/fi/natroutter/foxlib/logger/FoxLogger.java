@@ -19,6 +19,9 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -129,8 +132,19 @@ public class FoxLogger {
         public FoxLogger build() {return new FoxLogger(this);}
     }
 
-    private List<String> entries = new ArrayList<>();
+    /**
+     * Lines waiting to be written.
+     *
+     * <p>Guarded by its own monitor rather than made concurrent, because {@link #save()} needs
+     * to take everything and clear it as one step: a concurrent list would let a line arriving
+     * between the read and the clear be dropped. Every append is short and uncontended, so the
+     * lock costs nothing worth measuring.
+     */
+    private final List<String> entries = new ArrayList<>();
     private File logFolder;
+
+    /** Runs the periodic save and prune. Null when saving is off. */
+    private ScheduledExecutorService saver;
 
     private Builder args;
     private final BiConsumer<LogLevel, String> onEntry;
@@ -156,16 +170,33 @@ public class FoxLogger {
 
         //Timer
         if (args.isSaveLogs()) {
-            new Timer().schedule(new TimerTask() {
-                public void run() {
+            // A ScheduledExecutorService rather than a Timer, and the body wrapped, because
+            // either one stops running a task for good once it throws. That used to mean a
+            // single ConcurrentModificationException in save() silently ended all logging and
+            // all pruning for the life of the process, which is the opposite of what a log
+            // file is for.
+            saver = Executors.newSingleThreadScheduledExecutor(runnable -> {
+                Thread thread = new Thread(runnable, "foxlogger-save");
+                thread.setDaemon(true);
+                return thread;
+            });
+            saver.scheduleAtFixedRate(() -> {
+                try {
                     save();
                     prune();
+                } catch (Throwable t) {
+                    // Deliberately swallowed after being shown. One failed save must cost one
+                    // save, not every future one.
+                    System.err.println("[" + args.getLoggerName() + "] Could not save the log: " + t);
                 }
-            }, 0, args.getSaveIntervalSeconds() * 1000L);
+            }, 0, args.getSaveIntervalSeconds(), TimeUnit.SECONDS);
         }
     }
 
     public void close() {
+        if (saver != null) {
+            saver.shutdown();
+        }
         save();
         prune();
     }
@@ -174,7 +205,11 @@ public class FoxLogger {
     public void log(String msg, boolean silent) {
         if (onEntry != null) onEntry.accept(LogLevel.LOG,   "["+timeStamp()+"]["+args.loggerName+"] " + msg);
         if (args.isUseColors()) { msg = msg.replace("\n", "\n{BLUE}"); }
-        if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][LOG] " + msg);}
+        if (args.isSaveLogs()) {
+            synchronized (entries) {
+                entries.add("[" + timeStamp() + "][LOG] " + msg);
+            }
+        }
         if (!silent) console("{BLUE}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + msg + "{RESET}");
     }
 
@@ -182,7 +217,11 @@ public class FoxLogger {
     public void info(String msg, boolean silent) {
         if (onEntry != null) onEntry.accept(LogLevel.INFO,  "["+timeStamp()+"]["+args.loggerName+"][INFO] " + msg);
         if (args.isUseColors()) { msg = msg.replace("\n", "\n{GREEN}"); }
-        if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][INFO] " + msg);}
+        if (args.isSaveLogs()) {
+            synchronized (entries) {
+                entries.add("[" + timeStamp() + "][INFO] " + msg);
+            }
+        }
         if (!silent) console("{GREEN}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[INFO] " + msg + "{RESET}");
     }
 
@@ -190,7 +229,11 @@ public class FoxLogger {
     public void error(String msg, boolean silent) {
         if (onEntry != null) onEntry.accept(LogLevel.ERROR, "["+timeStamp()+"]["+args.loggerName+"][ERROR] " + msg);
         if (args.isUseColors()) { msg = msg.replace("\n", "\n{RED}"); }
-        if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][ERROR] " + msg);}
+        if (args.isSaveLogs()) {
+            synchronized (entries) {
+                entries.add("[" + timeStamp() + "][ERROR] " + msg);
+            }
+        }
         if (!silent) console("{RED}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[ERROR] " + msg + "{RESET}");
     }
 
@@ -198,7 +241,11 @@ public class FoxLogger {
     public void fatal(String msg, boolean silent) {
         if (onEntry != null) onEntry.accept(LogLevel.FATAL, "["+timeStamp()+"]["+args.loggerName+"][FATAL] " + msg.toUpperCase());
         if (args.isUseColors()) { msg = msg.replace("\n", "\n{RED}"); }
-        if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][FATAL] " + msg.toUpperCase());}
+        if (args.isSaveLogs()) {
+            synchronized (entries) {
+                entries.add("[" + timeStamp() + "][FATAL] " + msg.toUpperCase());
+            }
+        }
         if (!silent) console("\n{RED}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[FATAL] " + msg.toUpperCase() + "{RESET}\n");
     }
 
@@ -206,7 +253,11 @@ public class FoxLogger {
     public void warn(String msg, boolean silent) {
         if (onEntry != null) onEntry.accept(LogLevel.WARN,  "["+timeStamp()+"]["+args.loggerName+"][WARN] " + msg);
         if (args.isUseColors()) { msg = msg.replace("\n", "\n{YELLOW}"); }
-        if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][WARN] " + msg);}
+        if (args.isSaveLogs()) {
+            synchronized (entries) {
+                entries.add("[" + timeStamp() + "][WARN] " + msg);
+            }
+        }
         if (!silent) console("{YELLOW}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + "[WARN] " + msg + "{RESET}");
     }
 
@@ -314,7 +365,11 @@ public class FoxLogger {
     private void debug(String msg) {
         if(args.isDebug()) {
             if (args.isUseColors()) { msg = msg.replace("\n", "\n{BLUE}"); }
-            if (args.isSaveLogs()) {entries.add("["+timeStamp()+"][DEBUG] " + msg);}
+            if (args.isSaveLogs()) {
+                synchronized (entries) {
+                    entries.add("[" + timeStamp() + "][DEBUG] " + msg);
+                }
+            }
             console("{BLUE}" + (args.isUseTimeStamp() ? "["+timeStamp()+"]" : "") + "["+args.loggerName+"]" + msg + "{RESET}");
         }
     }
@@ -380,6 +435,15 @@ public class FoxLogger {
     }
 
     private void save() {
+        List<String> pending;
+        synchronized (entries) {
+            if (entries.isEmpty()) {
+                return;
+            }
+            pending = new ArrayList<>(entries);
+            entries.clear();
+        }
+
         if (!logFolder.exists()) {
             logFolder.mkdirs();
         }
@@ -394,7 +458,7 @@ public class FoxLogger {
         File saveTo = new File(logFolder, fileName);
 
         StringBuilder fullEntry = new StringBuilder();
-        for (String entry : entries) {
+        for (String entry : pending) {
             fullEntry.append(entry).append(System.lineSeparator());
         }
         String oldContent = "";
@@ -403,15 +467,20 @@ public class FoxLogger {
             if (read.success()) {
                 oldContent = read.content();
             } else {
+                synchronized (entries) {
+                    entries.addAll(0, pending);
+                }
                 debug("Cant read log file! : " + read.message());
                 return;
             }
         }
         WriteResponse write = FileUtils.writeFile(saveTo, oldContent + fullEntry);
         if (write.success()) {
-            entries.clear();
             debug("Log file saved!");
             return;
+        }
+        synchronized (entries) {
+            entries.addAll(0, pending);
         }
         debug("Failed to write log file!");
     }
