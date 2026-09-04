@@ -1,7 +1,6 @@
 package fi.natroutter.foxlib.logger;
 
 import fi.natroutter.foxlib.files.FileUtils;
-import fi.natroutter.foxlib.files.ReadResponse;
 import fi.natroutter.foxlib.files.WriteResponse;
 import fi.natroutter.foxlib.logger.types.ILogData;
 import fi.natroutter.foxlib.logger.types.LogLevel;
@@ -461,20 +460,8 @@ public class FoxLogger {
         for (String entry : pending) {
             fullEntry.append(entry).append(System.lineSeparator());
         }
-        String oldContent = "";
-        if (saveTo.exists()) {
-            ReadResponse read = FileUtils.readFile(saveTo);
-            if (read.success()) {
-                oldContent = read.content();
-            } else {
-                synchronized (entries) {
-                    entries.addAll(0, pending);
-                }
-                debug("Cant read log file! : " + read.message());
-                return;
-            }
-        }
-        WriteResponse write = FileUtils.writeFile(saveTo, oldContent + fullEntry);
+
+        WriteResponse write = FileUtils.appendFile(saveTo, fullEntry.toString());
         if (write.success()) {
             debug("Log file saved!");
             return;

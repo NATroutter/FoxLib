@@ -1,21 +1,11 @@
 package fi.natroutter.foxlib.files;
 
-import fi.natroutter.foxlib.logger.FoxLogger;
-
 import java.awt.*;
 import java.io.*;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 
 public class FileUtils {
-
-    private static FoxLogger logger = new FoxLogger.Builder()
-            .setDebug(false)
-            .setPruneOlderThanDays(35)
-            .setSaveIntervalSeconds(300)
-            .setLoggerName("FileUtils")
-            .build();
-
 
     public static boolean exportResource(File outputFile) throws ExportException {
         return exportResource(outputFile, outputFile.getName());
@@ -115,6 +105,27 @@ public class FileUtils {
                 progress.accept(1.0f); // Ensure we report 100% completion
             }
 
+            return new WriteResponse(true, file.getName(), "OK");
+        } catch (Exception e) {
+            return new WriteResponse(false, file.getName(), e.getMessage());
+        }
+    }
+
+    /**
+     * Appends to a file, creating it if it is not there.
+     *
+     * <p>Distinct from {@link #writeFile}, which truncates. A log wants this one: rewriting the
+     * whole file to add a line is quadratic in its size, holds two copies of it in memory, and
+     * loses everything rather than the last few lines if the write is interrupted.
+     *
+     * @param file    the file to append to
+     * @param content the text to add, which should end with a line separator
+     * @return whether it was written
+     */
+    public static WriteResponse appendFile(File file, String content) {
+        try (FileWriter fw = new FileWriter(file, true); BufferedWriter bw = new BufferedWriter(fw)) {
+            bw.write(content);
+            bw.flush();
             return new WriteResponse(true, file.getName(), "OK");
         } catch (Exception e) {
             return new WriteResponse(false, file.getName(), e.getMessage());
