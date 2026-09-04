@@ -34,7 +34,7 @@ public class FoxLogger {
         private boolean consoleLog = true;
         private boolean debug = false;
         private String timeFormat = "dd.MM.yyyy-HH:mm:ss";
-        private String timeZone = "Europe/Helsinki";
+        private String timeZone = ZoneId.systemDefault().getId();
         private File dataFolder = null;
         private String parentFolder = null;
         private String logNameSuffix = "Log";
@@ -408,8 +408,8 @@ public class FoxLogger {
             case MONTH_DAY_YEAR -> DateTimeFormatter.ofPattern("M-d-yyyy");
             case DAY_MONTH_YEAR -> DateTimeFormatter.ofPattern("d-M-yyyy");
         };
-        // The clock save() names files by, so a file written today is never "older" than today.
-        LocalDate cutoff = LocalDate.now().minusDays(args.getPruneOlderThanDays());
+        // The same zone save() names files by, so a file written today is never "older" than today.
+        LocalDate cutoff = LocalDate.now(ZoneId.of(args.getTimeZone())).minusDays(args.getPruneOlderThanDays());
 
         int pruneCount = 0;
         File[] files = logFolder.listFiles();
@@ -491,7 +491,7 @@ public class FoxLogger {
         if (!logFolder.exists()) {
             logFolder.mkdirs();
         }
-        ZonedDateTime now = ZonedDateTime.now();
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of(args.getTimeZone()));
         String fileName = args.getLogNameSuffix() + "_";
 
         switch (args.getLogDateFormat()) {
