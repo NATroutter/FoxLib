@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 import java.io.File;
 import java.nio.file.Paths;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -384,9 +383,11 @@ public class FoxLogger {
     }
     private String timeStamp() {
         ZoneId zone = ZoneId.of(args.getTimeZone());
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(args.getTimeFormat());
-        formatter.withZone(zone);
-        return LocalDateTime.now().format(formatter);
+        // Assigned, not discarded. DateTimeFormatter is immutable, so `withZone` returns a new
+        // formatter and the old code threw it away, then formatted LocalDateTime.now(), which
+        // has no zone at all. setTimeZone did nothing whatsoever.
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(args.getTimeFormat()).withZone(zone);
+        return ZonedDateTime.now(zone).format(formatter);
     }
 
     private void prune() {
