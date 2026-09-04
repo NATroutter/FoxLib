@@ -453,6 +453,11 @@ public class FoxLogger {
     /**
      * Returns the file to write to, which is the next numbered part when the current one is full.
      *
+     * <p>Once parts 2 through 999 are all at the cap, the highest-numbered part is returned
+     * rather than {@code base}: writing into {@code base} again would put the newest lines in
+     * the earliest-named file of the day and let it grow without bound, which is the failure
+     * the cap exists to prevent.
+     *
      * @param base today's log file
      * @return {@code base}, or {@code Log_9-4-2026.2.log} and so on once it is over the cap
      */
@@ -461,13 +466,15 @@ public class FoxLogger {
             return base;
         }
         String name = base.getName().substring(0, base.getName().length() - 4);
+        File last = base;
         for (int part = 2; part < 1000; part++) {
             File candidate = new File(logFolder, name + "." + part + ".log");
             if (!candidate.exists() || candidate.length() < MAX_LOG_BYTES) {
                 return candidate;
             }
+            last = candidate;
         }
-        return base;
+        return last;
     }
 
     private void save() {
@@ -491,8 +498,7 @@ public class FoxLogger {
             case DAY_MONTH_YEAR -> fileName += now.getDayOfMonth() + "-" + now.getMonthValue() + "-" + now.getYear() + ".log";
         }
 
-        File saveTo = new File(logFolder, fileName);
-        saveTo = rolled(saveTo);
+        File saveTo = rolled(new File(logFolder, fileName));
 
         StringBuilder fullEntry = new StringBuilder();
         for (String entry : pending) {
