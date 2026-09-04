@@ -34,3 +34,22 @@ FoxLib is NATroutter's common purposes java library that provides some useful fe
     <version>{VERSION}</version>
 </dependency>
 ````
+
+## 1.5.0 is a breaking change
+
+The MongoDB driver, snakeyaml, gson and jsoup are `provided` from this version on, so they are
+no longer pulled in for you. Declare the one you need beside FoxLib:
+
+| If you use | Declare |
+|---|---|
+| `foxlib.mongo` | `org.mongodb:mongodb-driver-sync` |
+| `foxlib.config.ConfigProvider` | `org.yaml:snakeyaml` |
+| `foxlib.updates.GitHubVersionChecker` | `com.google.code.gson:gson` and `org.jsoup:jsoup` |
+
+Nothing else changes. `FoxLogger`, `Cooldown`, the file helpers and the statics on `FoxLib` need
+no dependency of their own.
+
+Why: the published jar bundled all four, plus Lombok's runtime agent and installer, into every
+consumer. A project that wanted a logger received an HTML parser, a YAML parser, a database
+driver and a second copy of gson under the same package as its own, which decided at shade time
+rather than at resolution time which one actually ran.
