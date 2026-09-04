@@ -46,10 +46,19 @@ no longer pulled in for you. Declare the one you need beside FoxLib:
 | `foxlib.config.ConfigProvider` | `org.yaml:snakeyaml` |
 | `foxlib.updates.GitHubVersionChecker` | `com.google.code.gson:gson` and `org.jsoup:jsoup` |
 
-Nothing else changes. `FoxLogger`, `Cooldown`, the file helpers and the statics on `FoxLib` need
-no dependency of their own.
+Nothing else changes on the dependency front. `FoxLogger`, `Cooldown`, the file helpers and the
+statics on `FoxLib` need no dependency of their own.
 
 Why: the published jar bundled all four, plus Lombok's runtime agent and installer, into every
 consumer. A project that wanted a logger received an HTML parser, a YAML parser, a database
 driver and a second copy of gson under the same package as its own, which decided at shade time
 rather than at resolution time which one actually ran.
+
+### What else a `FoxLogger` consumer will notice
+
+- Timestamps now follow the configured time zone; `setTimeZone` previously had no effect. The
+  default is the system zone, so nothing changes unless you set one.
+- Log files roll to `.2.log`, `.3.log` and so on past 32 MB, where previously age was the only
+  bound.
+- The save thread is now a daemon, so a process that exits without calling `close()` loses up to
+  one save interval of buffered lines. Call `close()` on shutdown.
